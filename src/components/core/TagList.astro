@@ -1,0 +1,73 @@
+---
+import { ALL_CATEGORIES, getTagColor } from '../../utils/tags';
+---
+
+<section class="transition-zone">
+  <div class="transition-inner">
+    <div class="topics-label">TOPICS</div>
+    <div class="tags">
+      {ALL_CATEGORIES.map((tag) => (
+        <a
+          href={`/posts/${tag}/`}
+          class="tag"
+          style={`color: ${getTagColor(tag)}`}
+        >
+          [{tag}]
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .transition-zone {
+    border-top: 1px solid var(--border-subtle);
+    padding: var(--space-xl) var(--space-lg) var(--space-2xl);
+    text-align: center;
+  }
+
+  .transition-inner {
+    max-width: var(--max-width-prose);
+    margin: 0 auto;
+  }
+
+  .topics-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-disabled);
+    letter-spacing: 0.1em;
+    margin-bottom: var(--space-md);
+  }
+
+  .tags {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+
+  .tag {
+    color: var(--fg-tertiary);
+    transition: color 200ms ease;
+  }
+
+  .tag:hover {
+    color: var(--accent-primary) !important;
+  }
+
+  @media (max-width: 768px) {
+    .tags {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .tags::-webkit-scrollbar {
+      display: none;
+    }
+  }
+</style>
