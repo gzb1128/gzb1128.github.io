@@ -19,6 +19,11 @@
 	--radius-sm: 4px;
 	--radius-md: 6px;
 	--radius-lg: 12px;
+
+	--bp-sm: 640px;
+	--bp-md: 768px;
+	--bp-lg: 1024px;
+	--bp-xl: 1280px;
 }
 
 :root[data-theme="dark"] {
@@ -63,4 +68,10 @@
 
 	--accent-primary: #5E6AD2;
 	--accent-secondary: #7B85E8;
+
+	--syntax-keyword: #C586C0;
+	--syntax-string: #CE9178;
+	--syntax-number: #B5CEA8;
+	--syntax-comment: #6A737D;
+	--syntax-fn: #DCDCAA;
 }
