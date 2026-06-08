@@ -1,0 +1,75 @@
+---
+title: "K8S 容器和声明式资源"
+description: "从初学者视角理解 Kubernetes 的容器技术和声明式资源管理。"
+pubDate: 2023-11-30
+category: "cloud-native"
+tags: ["kubernetes", "container", "declarative-api"]
+---
+
+## 容器技术
+
+### 容器 Container
+
+容器（Container）技术是 K8s 的底层支撑，K8s 基于容器技术构建云应用。容器是一种虚拟化技术，核心思想是实现在 OS 层之上的部分逻辑设备的虚拟化——这是容器和虚拟机的本质区别。因此容器相对于虚拟机会轻量很多，但也只能和逻辑主机（物理机或虚拟机）的 OS 使用相同的 OS。
+
+容器提供的虚拟化在于 OS 之上的某些资源的虚拟化，例如虚拟化的 CPU、GPU、卷等。这些虚拟化的资源都叫做逻辑资源：对于应用来说，它不知道自己运行在容器之中，只是普通的调用自己需要的资源，而外面包着的容器层会将对这些逻辑资源的调用转换成对 OS 层资源的调用。
+
+### 镜像 Image
+
+容器中可以运行镜像（Image）。目前镜像的主要用途是打包应用和应用运行时的环境，例如运行时库、环境变量等。
+
+### 容器运行时 Container Runtime
+
+容器运行时是一种容器实现的技术方案，例如 Docker 就是最著名的 Container Runtime。容器运行时基于容器的技术思想做出具体的实现，从而提供了一些增强的包装和功能，例如容器命令行、SSH、虚拟化设备种类、个性化配置等。容器实例则是容器运行时基于若干配置产生的某个容器实例，包含了容器运行需要的所有资源，例如挂载的镜像、卷（Volume）等。
+
+## Kubernetes
+
+### 负载均衡
+
+K8s 提供了集群级别的应用部署和管理方案，底层就是容器技术。因此很好理解，在单个应用的部署阶段，K8s 只要将应用的镜像实例化到容器中就可以完成应用的部署。
+
+但是当场景来到集群中时，K8s 要管理的是多个资源有限（主要是 CPU 和内存）的主机，因此如何将应用调度到合适的主机上，从而更好地利用集群的资源就成了一个核心问题——这也叫做负载均衡。
+
+### 声明式资源
+
+对于用户来说，对集群的底层管理是繁琐的，因此 K8s 提供了一类声明式的 API：用户只需要声明自己需要部署什么样的应用，K8s 就会自动提供负载均衡的能力。
+
+为了给声明式 API 提供能力支持，K8s 提供了许多声明式的资源，最典型的就是 Node、Pod、Deployment。这些声明式资源是一类由 K8s 管理和解析的文本，用户通过对这类资源进行编辑，K8s 会认识到这类资源发生的变化，从而认识到用户声明的集群理想状态发生了改变，进而自动将集群的状态调整到理想状态。
+
+一个典型的 Deployment 资源声明如下：
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+```
+
+### Controller
+
+K8s 整体的设计哲学是包容开放的，能够拓展自定义逻辑和声明式能力。因此 K8s 引入了控制器（Controller）的概念：控制器能够根据声明式资源的实际状态和期望状态的差别进行工作，从而使得集群能够趋于理想状态。
+
+这个 reconcile 循环可以表示为：
+
+$$\text{Controller}: (\text{desired state}, \text{actual state}) \xrightarrow{\text{reconcile}} \text{action}$$
+
+控制器不断 watch 资源变化，对比期望状态与实际状态的差异，然后执行相应的操作来缩小差距。这正是 K8s 声明式 API 的核心机制。
+
+---
+
+*本文从 CSDN 迁移并重写，[原文链接](https://blog.csdn.net/qq_36993218/article/details/132325604)。*

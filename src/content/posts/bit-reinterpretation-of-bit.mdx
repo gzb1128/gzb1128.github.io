@@ -1,0 +1,166 @@
+---
+title: "从位运算角度重新理解树状数组"
+description: "为什么传统解释不够深刻？从 lowbit 的位运算本质出发，重新推导 BIT 的 Query 和 Update 操作。"
+pubDate: 2025-09-17
+category: "algorithm"
+tags: ["bit-manipulation", "fenwick-tree", "data-structure"]
+---
+
+当我们学习树状数组（Binary Indexed Tree，也称 Fenwick Tree）时，大多数教程都会告诉我们：
+
+- 树状数组是一种"树形结构"
+- 通过 `i += lowbit(i)` 可以"向上找父节点"
+- 通过 `i -= lowbit(i)` 可以"向下找子节点"
+- 每个节点管理一个特定长度的区间
+
+这些解释看起来合理，但却没有回答一个核心问题：**为什么只能跳到这些特定的节点？为什么不是其他的跳跃方式？**
+
+更深入地思考，既然树状数组的核心操作都是基于 `lowbit(x) = x \& (-x)` 这个位运算，那我们是否应该从位运算的角度来理解它的本质？
+
+## lowbit 的位运算含义
+
+`lowbit(x)` 表示 x 的二进制表示中最右边的 1 及其右边所有 0 组成的数值。
+
+`lowbit(x) = x \& (-x)` — 它提取出 x 二进制表示中最低位的 1 对应的 2 的幂次。
+
+例子：
+
+| x | 二进制 | lowbit(x) |
+|---|--------|-----------|
+| 12 | 1100₂ | 4 |
+| 6 | 0110₂ | 2 |
+| 8 | 1000₂ | 8 |
+| 5 | 0101₂ | 1 |
+
+为什么 `x \& (-x)` 能得到 lowbit？补码运算中，从右往左找到第一个 1，这个 1 及其右边的 0 在取反加 1 后保持不变，而左边的位全部被翻转。因此 `x \& (-x)` 只保留了最右边的 1。
+
+## tree[i] 的含义
+
+`tree[i]` 管理从位置 `i - lowbit(i) + 1` 到位置 `i` 的区间和。
+
+| i | 区间 | lowbit |
+|---|------|--------|
+| 1 | [1,1] | 1 |
+| 2 | [1,2] | 2 |
+| 3 | [3,3] | 1 |
+| 4 | [1,4] | 4 |
+| 5 | [5,5] | 1 |
+| 6 | [5,6] | 2 |
+| 7 | [7,7] | 1 |
+| 8 | [1,8] | 8 |
+
+## Query 操作的区间分解
+
+```go
+func (bit *BIT) Query(i int) int {
+    sum := 0
+    for i > 0 {
+        sum += bit.tree[i]
+        i -= lowbit(i)
+    }
+    return sum
+}
+```
+
+Query(6) 分解：`[1,6] = [5,6] ∪ [1,4]` → `sum = tree[6] + tree[4]`
+
+Query(7) 分解：`[1,7] = [7,7] ∪ [5,6] ∪ [1,4]` → `sum = tree[7] + tree[6] + tree[4]`
+
+## 核心理论：贡献关系的位运算构造
+
+核心问题：当更新位置 b 时，哪些 `tree[a]` 需要被更新？
+
+从位运算角度，构造过程为：从 a 开始，将 `lowbit(a)` 位清零，然后在 `lowbit(a)` 位之后的位置进行任意组合（但不能全为 0），最后加上 a 本身。
+
+判断规律：b 属于 `tree[a]` 管理范围，当且仅当：
+
+1. `(b \& ~(lowbit(a)-1)) == (a \& ~(lowbit(a)-1))`（高位部分相同）
+2. `b \& (lowbit(a)-1) != 0` 或 `b == a`（低位部分不全为 0，或者就是 a 本身）
+
+## 从 b 构造贡献目标 a
+
+逆向构造：对于给定的 b，找到所有它能贡献的 a。从 `lowbit(b)` 位开始向左枚举 0 位，设置为 1 作为新 a 的 lowbit。
+
+例子 `b=3=0011₂`：贡献路径 `3 → 4 → 8 → 16 → 32 → ...`
+
+例子 `b=6=0110₂`：贡献路径 `6 → 8 → 16 → 32 → ...`
+
+## Update 操作的位运算本质
+
+```go
+func (bit *BIT) Update(i, delta int) {
+    for i <= bit.n {
+        bit.tree[i] += delta
+        i += lowbit(i)
+    }
+}
+```
+
+`i += lowbit(i)` 恰好枚举了理论中的贡献路径！
+
+设 `i = ...abc10...0`（最后有 k 个 0），`lowbit(i) = 2^k`，则：
+
+$$i + \text{lowbit}(i) = ...ab(c+1)00...0$$
+
+这自动完成了：找到最右边的 1，进位到下一个 0 位，保留前缀，清零新 lowbit 之后的位。
+
+验证 `b=3`：`3(0011) + 1(0001) = 4(0100)` ✓
+
+验证 `b=6`：`6(0110) + 2(0010) = 8(1000)` ✓
+
+## Go 验证程序
+
+下面是一个完整的对比验证程序，用位运算枚举实现（基于理论）与传统暴力实现对比：
+
+```go
+package main
+
+import (
+	"fmt"
+	"math/bits"
+)
+
+func lowbit(x int) int {
+	return x & (-x)
+}
+
+// 暴力法：枚举所有 a，判断 b 是否在 tree[a] 的管理范围内
+func bruteForceContributions(b, n int) []int {
+	var result []int
+	for a := 1; a <= n; a++ {
+		lb := lowbit(a)
+		mask := ^(lb - 1)
+		if (b&mask) == (a&mask) && (b&(lb-1) != 0 || b == a) {
+			result = append(result, a)
+		}
+	}
+	return result
+}
+
+// 理论法：从 b 出发沿贡献路径枚举
+func theoreticalContributions(b, n int) []int {
+	var result []int
+	for i := b; i <= n; {
+		result = append(result, i)
+		i += lowbit(i)
+	}
+	return result
+}
+
+func main() {
+	n := 16
+	for b := 1; b <= n; b++ {
+		bf := bruteForceContributions(b, n)
+		th := theoreticalContributions(b, n)
+		match := fmt.Sprintf("%v", bf) == fmt.Sprintf("%v", th)
+		fmt.Printf("b=%2d (binary=%04b) brute=%v theory=%v match=%v\n",
+			b, b, bf, th, match)
+	}
+}
+```
+
+运行结果验证：两种方法对所有 b 的贡献列表完全一致。这证明了 `i += lowbit(i)` 的 Update 路径确实是理论推导出的所有贡献目标的精确枚举。
+
+---
+
+*本文从 CSDN 迁移并重写，[原文链接](https://blog.csdn.net/qq_36993218/article/details/151803363)。*
