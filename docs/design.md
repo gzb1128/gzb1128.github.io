@@ -1,4 +1,7 @@
-# Zephyr's Lab — Design Spec
+# Zephyr's Lab — Design Spec (Draft)
+
+> **已废弃** — 本文档已被 `docs/superpowers/specs/2026-06-08-zephyr-lab-design.md` 替代。
+> 如有冲突，以新 spec 为准。
 
 视觉与交互设计规范。后续 AI Agent 实现 UI 时以此为准。
 

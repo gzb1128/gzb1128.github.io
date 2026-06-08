@@ -63,12 +63,17 @@ design.md 的 Editor 风格细节部分已拆解到各组件：
 --bg-primary:    #FFFFFF;
 --bg-secondary:  #F7F8F8;
 --bg-tertiary:   #F3F4F6;
+--bg-hover:      #F0F1F3;
 --fg-primary:    #08090A;
 --fg-secondary:  #3C4149;
 --fg-tertiary:   #6B7280;
+--fg-disabled:   #9CA3AF;
 --border-subtle: #E5E7EB;
 --border-default:#D1D5DB;
+--border-strong: #B0B5BD;
 --accent-primary:#5E6AD2;
+--accent-secondary:#7B85E8;
+/* syntax 色用于 tag 配色，dark/light 共用，需验证对比度 */
 ```
 
 ## 字体系统
@@ -183,6 +188,7 @@ TOPICS
   - `[cryptography]` → `--syntax-fn` (#DCDCAA, 黄)
   - `[essay]` → `--syntax-comment` (#6A737D, 灰)
 - 标签 hover 时统一变 accent 蓝色
+- Transition Zone 展示全部 5 个分类（与 content collection schema 一致）
 
 ### 4. Post List
 
@@ -204,7 +210,7 @@ TOPICS
 
 ### 5. Post Detail
 
-- 顶部：标题 + 元信息（日期、tags、阅读时长、字数）
+- 顶部：标题 + 元信息（日期 ISO 8601 格式 `2026-06-08`、tags、阅读时长、字数）
 - 正文：720px 居中，行高 1.7
 - 代码块：见下方 §代码块 详细规范
 - 底部：上一篇/下一篇导航 + Giscus 评论
