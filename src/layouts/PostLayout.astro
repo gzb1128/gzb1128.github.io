@@ -1,0 +1,126 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import { getTagColor, type Category } from '../utils/tags';
+
+interface Props {
+  title: string;
+  pubDate: Date;
+  category: Category;
+  description?: string;
+  updatedDate?: Date;
+}
+
+const { title, pubDate, category, description, updatedDate } = Astro.props;
+
+const dateStr = pubDate.toISOString().split('T')[0];
+const updatedStr = updatedDate ? updatedDate.toISOString().split('T')[0] : null;
+---
+
+<BaseLayout title={`${title} — Zephyr's Lab`} description={description}>
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">{title}</h1>
+      <div class="post-meta">
+        <time datetime={dateStr}>{dateStr}</time>
+        {updatedStr && (
+          <span class="post-updated">(updated: {updatedStr})</span>
+        )}
+        <span
+          class="post-category"
+          style={`color: ${getTagColor(category)}`}
+        >
+          [{category}]
+        </span>
+      </div>
+    </header>
+    <div class="post-content">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .post {
+    max-width: var(--max-width-prose);
+    margin: 0 auto;
+    padding: calc(var(--space-3xl) + var(--header-height)) var(--space-lg) var(--space-4xl);
+  }
+
+  .post-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .post-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-md);
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--fg-tertiary);
+  }
+
+  .post-updated {
+    color: var(--fg-disabled);
+  }
+
+  .post-category {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+
+  .post-content {
+    line-height: 1.7;
+  }
+
+  .post-content :global(h2) {
+    margin-top: var(--space-2xl);
+    margin-bottom: var(--space-md);
+  }
+
+  .post-content :global(h3) {
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-sm);
+  }
+
+  .post-content :global(p) {
+    margin-bottom: var(--space-md);
+  }
+
+  .post-content :global(pre) {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin: var(--space-xl) 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    position: relative;
+  }
+
+  .post-content :global(blockquote) {
+    border-left: 3px solid var(--accent-primary);
+    padding-left: var(--space-lg);
+    color: var(--fg-secondary);
+    margin: var(--space-xl) 0;
+  }
+
+  .post-content :global(ul),
+  .post-content :global(ol) {
+    margin-bottom: var(--space-md);
+    padding-left: var(--space-lg);
+  }
+
+  .post-content :global(img) {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+  }
+</style>
