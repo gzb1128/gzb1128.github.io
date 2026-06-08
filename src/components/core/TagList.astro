@@ -9,8 +9,7 @@ import { ALL_CATEGORIES, getTagColor } from '../../utils/tags';
       {ALL_CATEGORIES.map((tag) => (
         <a
           href={`/posts/${tag}/`}
-          class="tag"
-          style={`color: ${getTagColor(tag)}`}
+          class={`tag tag-${tag}`}
         >
           [{tag}]
         </a>
@@ -54,7 +53,21 @@ import { ALL_CATEGORIES, getTagColor } from '../../utils/tags';
   }
 
   .tag:hover {
-    color: var(--accent-primary) !important;
+    color: var(--accent-primary);
+  }
+
+  .tag-ai-agent { color: var(--syntax-string); }
+  .tag-cloud-native { color: var(--syntax-keyword); }
+  .tag-algorithm { color: var(--syntax-number); }
+  .tag-cryptography { color: var(--syntax-fn); }
+  .tag-essay { color: var(--syntax-comment); }
+
+  .tag-ai-agent:hover,
+  .tag-cloud-native:hover,
+  .tag-algorithm:hover,
+  .tag-cryptography:hover,
+  .tag-essay:hover {
+    color: var(--accent-primary);
   }
 
   @media (max-width: 768px) {

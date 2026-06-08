@@ -42,13 +42,14 @@ const years = Object.keys(grouped).map(Number).sort((a, b) => b - a);
           <span class="year-line" />
         </div>
       )}
-      {grouped[year].map((post) => {
+      {grouped[year].map((post, i) => {
         const date = post.data.pubDate;
         const month = date.toLocaleString('en-US', { month: 'short' });
         const day = String(date.getDate()).padStart(2, '0');
+        const isLast = i === grouped[year].length - 1;
         return (
           <a href={`/posts/${post.slug}/`} class="post-item">
-            <span class="post-tree">├─</span>
+            <span class="post-tree">{isLast ? '└─' : '├─'}</span>
             <span class="post-date">{month} {day}</span>
             <span class="post-title">{post.data.title}</span>
             <span
@@ -134,6 +135,12 @@ const years = Object.keys(grouped).map(Number).sort((a, b) => b - a);
   @media (max-width: 768px) {
     .post-item {
       flex-wrap: wrap;
+    }
+
+    .post-title {
+      flex-basis: 100%;
+      padding-left: calc(1ch + var(--space-sm) + 5.5em + var(--space-sm));
+      margin-top: calc(-1 * var(--space-xs));
     }
 
     .post-tag {
