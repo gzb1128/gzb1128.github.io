@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "katex/dist/katex.min.css";
 
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
@@ -49,6 +50,78 @@ pre code {
 	background: none;
 	border: none;
 	border-radius: 0;
+}
+
+pre {
+	background: var(--bg-tertiary);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-lg);
+	padding: var(--space-2xl) var(--space-lg) var(--space-lg);
+	margin: var(--space-xl) 0;
+	overflow-x: auto;
+	font-family: var(--font-mono);
+	font-size: 0.875rem;
+	line-height: 1.6;
+	position: relative;
+	counter-reset: line;
+}
+
+pre::before {
+	content: "● ● ●";
+	position: absolute;
+	top: 10px;
+	left: var(--space-lg);
+	font-size: 0.5rem;
+	letter-spacing: 3px;
+	color: var(--fg-disabled);
+	opacity: 0.5;
+}
+
+pre[data-language]::after {
+	content: attr(data-language);
+	position: absolute;
+	top: 10px;
+	right: 48px;
+	font-size: 0.7rem;
+	color: var(--fg-disabled);
+	font-family: var(--font-mono);
+}
+
+pre .line {
+	counter-increment: line;
+}
+
+pre .line::before {
+	content: counter(line);
+	display: inline-block;
+	width: 2.5em;
+	margin-right: 1em;
+	text-align: right;
+	color: var(--fg-disabled);
+	opacity: 0.4;
+	font-size: 0.8em;
+	user-select: none;
+}
+
+pre .copy-btn {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	background: var(--bg-secondary);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-sm);
+	color: var(--fg-tertiary);
+	font-family: var(--font-mono);
+	font-size: 0.7rem;
+	padding: 2px 8px;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 200ms ease;
+	z-index: 1;
+}
+
+pre:hover .copy-btn {
+	opacity: 1;
 }
 
 h1, h2, h3, h4 {
