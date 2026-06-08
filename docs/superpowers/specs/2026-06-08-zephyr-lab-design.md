@@ -2,7 +2,16 @@
 
 **Date**: 2026-06-08  
 **Status**: Approved  
-**Source**: Brainstorming session validating `docs/design.md`
+**Source**: Brainstorming session validating `docs/design.md`  
+**Note**: 本文档覆盖并替代 `docs/design.md`。如有冲突，以本文档为准。
+
+### Editor 风格细节（已吸收）
+
+design.md 的 Editor 风格细节部分已拆解到各组件：
+- Logo `$ zephyr.lab` → Header §1
+- Tag `[tag-name]` 风格 → Tag §8
+- ISO 8601 时间戳（`2026-06-08T10:44:00Z`）→ Post Detail 元信息 §5
+- 页面标题注释前缀 `// about.md` → About Page §10
 
 ## 设计哲学
 
@@ -121,7 +130,7 @@ Code 0.9rem   font-mono                (内联代码)
 │  TOPICS                                          │
 │  [ai-agent]  [cloud-native]  [essay]             │
 ├──────────────────────────────────────────────────┤
-│  Post List (max-width: 720px center)             │
+│  Post List (max-width: 1200px, items 720px)      │
 │                                                  │
 ├──────────────────────────────────────────────────┤
 │  Footer (color-tertiary, font-mono)              │
@@ -241,6 +250,53 @@ border-radius: 4px;
 
 颜色 tertiary，字体 mono。
 
+### 10. About Page
+
+简洁的个人介绍页，沿用 editor 美学：
+
+```
+// about.md
+
+Zephyr Gao
+Backend engineer working on AI agent tooling and Kubernetes ecosystems.
+
+Go · TypeScript · Python · Java (Spring)
+
+Links
+  → GitHub    github.com/gzb1128
+  → CSDN      blog.csdn.net/qq_36993218 (历史归档，185 篇)
+  → RSS       /rss.xml
+```
+
+- 标题用 `// about.md` 注释前缀（editor metaphor）
+- 链接列表用 prompt `→` 风格
+- CSDN 归档链接必须保留（验收标准要求）
+- 布局：720px 居中，与 Post Detail 同宽
+
+### 11. Search（Pagefind）
+
+- **触发**：Header 右侧搜索图标（放大镜 / `⌘K` 快捷键提示）
+- **交互**：点击打开全屏 modal overlay
+- **Modal 样式**：深色半透明遮罩 + 居中搜索框（640px 宽）
+  - 搜索框：等宽字体，placeholder 显示 `// search posts...`
+  - 结果列表：标题 + 日期 + 高亮匹配文字，等宽字体
+- **集成**：Pagefind 在 build 后生成索引，`Search.tsx` 为 React island
+
+### 12. Tag 点击行为
+
+点击任何 tag（Transition Zone 或 Post List 中）**导航到 `/posts/[tag]/`**，显示该分类下的所有文章。页面复用 Post List 组件，年份分组不变，只过滤对应分类。
+
+### 13. 数学公式 & 图表
+
+- **KaTeX**：通过 `remark-math` + `rehype-katex` 在 MDX 中渲染 LaTeX 公式
+  - 行内公式：`$E = mc^2$`
+  - 块级公式：`$$...$$`，居中显示，带编号（可选）
+  - 样式：沿用 `--font-mono` 配色，公式背景用 `--bg-tertiary`
+- **Mermaid**：通过 rehype 插件渲染流程图/序列图
+  - 深色主题：`dark` base，节点填充用 `--bg-secondary`，边框用 `--border-default`
+  - 字体：`--font-mono`
+  - 圆角与整体设计一致（`--radius-md`）
+
 ## 动画策略
 
 ### 第一版（极简）
@@ -306,6 +362,14 @@ src/
 ```
 
 设计先做 desktop（Linear 风格本身偏 desktop），再做 mobile 适配。
+
+### Mobile 行为（v1 简要规范）
+
+- **Header**：768px 以下导航收起为汉堡菜单，logo 保留
+- **Hero**：字号缩小（标题 28px → 24px），保持垂直分层
+- **Transition Zone**：标签横向滚动（overflow-x: auto）
+- **Post List**：时间轴简化，日期和标题堆叠而非并排
+- **Post Detail**：720px max-width 自然适配，无需额外处理
 
 ## SEO & Meta
 
