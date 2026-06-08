@@ -1,4 +1,7 @@
 ---
+import ThemeToggle from '../interactive/ThemeToggle';
+import Search from '../interactive/Search';
+
 const nav = [
   { href: '/posts', label: 'posts' },
   { href: '/about', label: 'about' },
@@ -13,6 +16,8 @@ const nav = [
       {nav.map(({ href, label }) => (
         <a href={href}>{label}</a>
       ))}
+      <Search client:load />
+      <ThemeToggle client:load />
     </div>
   </nav>
 </header>
