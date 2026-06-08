@@ -52,13 +52,14 @@ export default function Search() {
     return (
       <button
         onClick={() => setOpen(true)}
+        aria-label="Search posts"
         style={{
           background: 'none',
           border: 'none',
           cursor: 'pointer',
           fontFamily: 'var(--font-mono)',
           fontSize: '0.8rem',
-          color: 'var(--fg-disabled)',
+          color: 'var(--fg-tertiary)',
           padding: '4px',
         }}
       >
