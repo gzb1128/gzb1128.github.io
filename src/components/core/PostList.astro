@@ -1,0 +1,143 @@
+---
+import { getTagColor, type Category } from '../../utils/tags';
+
+interface Props {
+  posts: Array<{
+    slug: string;
+    data: {
+      title: string;
+      pubDate: Date;
+      category: Category;
+      description?: string;
+      draft?: boolean;
+    };
+  }>;
+  showYear?: boolean;
+}
+
+const { posts, showYear = true } = Astro.props;
+
+const sorted = posts
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const grouped = showYear
+  ? sorted.reduce<Record<number, typeof sorted>>((acc, post) => {
+      const year = post.data.pubDate.getFullYear();
+      acc[year] = acc[year] || [];
+      acc[year].push(post);
+      return acc;
+    }, {})
+  : { 0: sorted };
+
+const years = Object.keys(grouped).map(Number).sort((a, b) => b - a);
+---
+
+<section class="post-list">
+  {years.map((year) => (
+    <div class="year-group">
+      {showYear && (
+        <div class="year-header">
+          <span class="year-label">{year}</span>
+          <span class="year-line" />
+        </div>
+      )}
+      {grouped[year].map((post) => {
+        const date = post.data.pubDate;
+        const month = date.toLocaleString('en-US', { month: 'short' });
+        const day = String(date.getDate()).padStart(2, '0');
+        return (
+          <a href={`/posts/${post.slug}/`} class="post-item">
+            <span class="post-tree">├─</span>
+            <span class="post-date">{month} {day}</span>
+            <span class="post-title">{post.data.title}</span>
+            <span
+              class="post-tag"
+              style={`color: ${getTagColor(post.data.category)}`}
+            >
+              [{post.data.category}]
+            </span>
+          </a>
+        );
+      })}
+    </div>
+  ))}
+</section>
+
+<style>
+  .post-list {
+    max-width: var(--max-width-prose);
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+  }
+
+  .year-group {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .year-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .year-label {
+    color: var(--fg-tertiary);
+    font-size: 0.875rem;
+  }
+
+  .year-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle);
+  }
+
+  .post-item {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--fg-primary);
+    transition: background 200ms ease;
+  }
+
+  .post-item:hover {
+    background: var(--bg-hover);
+  }
+
+  .post-tree {
+    color: var(--fg-disabled);
+  }
+
+  .post-date {
+    color: var(--fg-tertiary);
+    min-width: 5.5em;
+  }
+
+  .post-title {
+    flex: 1;
+    color: var(--fg-primary);
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+  }
+
+  .post-tag {
+    margin-left: auto;
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 768px) {
+    .post-item {
+      flex-wrap: wrap;
+    }
+
+    .post-tag {
+      margin-left: calc(1ch + var(--space-sm) + 5.5em + var(--space-sm));
+    }
+  }
+</style>
