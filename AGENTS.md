@@ -56,14 +56,17 @@ src/content/posts/
 3. **动画可扩展**：不要锁死在某个主题的样式系统里，要能后续加入 GSAP / Framer Motion 实现 nexu.io 级别的滚动动画
 4. **零 JS 默认**：纯静态页面不引入 JS，动画组件按需 hydrate（`client:visible`）
 
-**配色草案**（待 design.md 细化）：
+**配色系统**（已定稿）：
+
+权威设计规范见 `docs/superpowers/specs/2026-06-08-zephyr-lab-design.md`。`docs/design.md` 是历史草稿，如有冲突以后者为准。
+
 ```
 背景：#08090A (Linear 同款 near-black)
 前景：#F7F8F8
 次要文字：#8A8F98
-强调色：#5E6AD2 (Linear ��蓝) 或 #00FFAA (terminal green，更极客)
+强调色：#5E6AD2 (Linear 紫蓝)
 代码块：#1C1C1F
-边框：#23252A
+边框：#1F2125 / #2A2D33 / #3A3D44
 ```
 
 ## 技术选型（已确认）
@@ -125,7 +128,8 @@ Astro 5
 - [x] 视觉风格方向确认
 - [x] 项目目录创建（`~/code/zephyr-lab/`）
 - [x] AGENTS.md（本文件）
-- [ ] docs/design.md（设计规范细化 — 配色、字体、组件清单）
+- [x] docs/design.md（历史草稿，已废弃）
+- [x] docs/superpowers/specs/2026-06-08-zephyr-lab-design.md（已验证设计规范）
 - [ ] Astro 项目初始化
 - [ ] Linear 风格主题定制
 - [ ] GitHub 仓库创建 + Actions 配置
