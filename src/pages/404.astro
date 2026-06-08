@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="404 — Zephyr's Lab">
+  <section class="not-found">
+    <div class="not-found-code">404</div>
+    <div class="not-found-msg">
+      <span class="prompt">$</span> page not found
+      <span class="cursor">&nbsp;</span>
+    </div>
+    <a href="/" class="not-found-link">$ cd ~/</a>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    font-family: var(--font-mono);
+    text-align: center;
+  }
+
+  .not-found-code {
+    font-size: 6rem;
+    font-weight: 700;
+    color: var(--fg-disabled);
+    line-height: 1;
+  }
+
+  .not-found-msg {
+    font-size: 1.125rem;
+    color: var(--fg-tertiary);
+    margin: var(--space-lg) 0;
+  }
+
+  .prompt {
+    color: var(--accent-primary);
+  }
+
+  .cursor {
+    border-right: 2px solid var(--accent-primary);
+    animation: blink 1s step-end infinite;
+  }
+
+  .not-found-link {
+    font-size: 0.875rem;
+    color: var(--accent-primary);
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+</style>

@@ -1,0 +1,111 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="About — Zephyr's Lab" description="About Zephyr Gao and this blog.">
+  <section class="about">
+    <div class="about-prefix">// about.md</div>
+    <h1 class="about-name">Zephyr Gao</h1>
+    <p class="about-bio">
+      Backend engineer working on AI agent tooling and Kubernetes ecosystems.
+    </p>
+    <div class="about-stack">
+      Go · TypeScript · Python · Java (Spring)
+    </div>
+    <div class="about-divider" />
+    <div class="about-section-label">Links</div>
+    <ul class="about-links">
+      <li>
+        <span class="link-arrow">→</span>
+        <strong>GitHub</strong>
+        <a href="https://github.com/gzb1128" target="_blank" rel="noopener">github.com/gzb1128</a>
+      </li>
+      <li>
+        <span class="link-arrow">→</span>
+        <strong>CSDN</strong>
+        <a href="https://blog.csdn.net/qq_36993218" target="_blank" rel="noopener">blog.csdn.net/qq_36993218</a>
+        <span class="link-note">(历史归档，185 篇)</span>
+      </li>
+      <li>
+        <span class="link-arrow">→</span>
+        <strong>RSS</strong>
+        <a href="/rss.xml">/rss.xml</a>
+      </li>
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  .about {
+    max-width: var(--max-width-prose);
+    margin: 0 auto;
+    padding: calc(var(--space-3xl) + var(--header-height)) var(--space-lg) var(--space-4xl);
+  }
+
+  .about-prefix {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-disabled);
+    margin-bottom: var(--space-lg);
+  }
+
+  .about-name {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: var(--space-md);
+  }
+
+  .about-bio {
+    color: var(--fg-secondary);
+    margin-bottom: var(--space-md);
+    line-height: 1.6;
+  }
+
+  .about-stack {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--fg-tertiary);
+  }
+
+  .about-divider {
+    border-top: 1px solid var(--border-subtle);
+    margin: var(--space-2xl) 0;
+  }
+
+  .about-section-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-disabled);
+    letter-spacing: 0.1em;
+    margin-bottom: var(--space-md);
+  }
+
+  .about-links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+  }
+
+  .about-links li {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+  }
+
+  .link-arrow {
+    color: var(--accent-primary);
+  }
+
+  .about-links strong {
+    min-width: 5em;
+    color: var(--fg-secondary);
+  }
+
+  .link-note {
+    color: var(--fg-disabled);
+    font-size: 0.8rem;
+  }
+</style>

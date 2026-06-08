@@ -1,9 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/core/Hero.astro';
+import TagList from '../components/core/TagList.astro';
+import PostList from '../components/core/PostList.astro';
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('posts');
 ---
 
 <BaseLayout title="Zephyr's Lab">
-  <div style="text-align:center;padding:20vh 0;color:var(--fg-tertiary);">
-    <p>Blog content coming soon...</p>
-  </div>
+  <Hero />
+  <TagList />
+  <PostList posts={allPosts} />
 </BaseLayout>

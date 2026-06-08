@@ -3,7 +3,7 @@ import { getTagColor, type Category } from '../../utils/tags';
 
 interface Props {
   posts: Array<{
-    slug: string;
+    id: string;
     data: {
       title: string;
       pubDate: Date;
@@ -48,7 +48,7 @@ const years = Object.keys(grouped).map(Number).sort((a, b) => b - a);
         const day = String(date.getDate()).padStart(2, '0');
         const isLast = i === grouped[year].length - 1;
         return (
-          <a href={`/posts/${post.slug}/`} class="post-item">
+          <a href={`/posts/${post.id}/`} class="post-item">
             <span class="post-tree">{isLast ? '└─' : '├─'}</span>
             <span class="post-date">{month} {day}</span>
             <span class="post-title">{post.data.title}</span>
