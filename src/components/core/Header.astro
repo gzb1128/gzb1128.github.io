@@ -1,0 +1,64 @@
+---
+const nav = [
+  { href: '/posts', label: 'posts' },
+  { href: '/about', label: 'about' },
+  { href: '/rss.xml', label: 'rss' },
+];
+---
+
+<header class="header">
+  <nav class="header-nav">
+    <a href="/" class="header-logo">$ zephyr.lab</a>
+    <div class="header-links">
+      {nav.map(({ href, label }) => (
+        <a href={href}>{label}</a>
+      ))}
+    </div>
+  </nav>
+</header>
+
+<style>
+  .header {
+    position: sticky;
+    top: 0;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    z-index: 100;
+    background: rgba(8, 9, 10, 0.7);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .header-nav {
+    width: 100%;
+    max-width: var(--max-width-wide);
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-logo {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--accent-primary);
+  }
+
+  .header-links {
+    display: flex;
+    gap: var(--space-lg);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--fg-tertiary);
+  }
+
+  .header-links a {
+    color: var(--fg-tertiary);
+  }
+
+  .header-links a:hover {
+    color: var(--fg-primary);
+  }
+</style>

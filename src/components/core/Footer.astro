@@ -1,0 +1,46 @@
+---
+---
+
+<footer class="footer">
+  <div class="footer-content">
+    <span>&copy; 2026 Zephyr Gao &middot; Built with Astro</span>
+    <div class="footer-links">
+      <a href="https://github.com/gzb1128" target="_blank" rel="noopener">github</a>
+      <a href="https://blog.csdn.net/qq_36993218" target="_blank" rel="noopener">csdn</a>
+      <a href="/rss.xml">rss</a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--border-subtle);
+    padding: var(--space-xl) var(--space-lg);
+    text-align: center;
+  }
+
+  .footer-content {
+    max-width: var(--max-width-wide);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-disabled);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: var(--space-lg);
+    justify-content: center;
+  }
+
+  .footer-links a {
+    color: var(--fg-disabled);
+  }
+
+  .footer-links a:hover {
+    color: var(--accent-primary);
+  }
+</style>
