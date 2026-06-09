@@ -1,0 +1,284 @@
+---
+title: "网络协议栈与路由机制"
+description: "从协议栈分层、核心概念、DHCP接入、IP路由到完整发包流程的系统性梳理。"
+pubDate: 2026-06-09
+category: "network"
+tags: ["network", "tcp/ip", "routing", "arp"]
+---
+
+## 协议栈分层模型
+
+### TCP/IP 四层模型
+
+实际工程中使用的分层模型。
+
+| 层 | 职责 | 典型协议 |
+|----|------|----------|
+| 应用层 | 用户应用，定义命令与响应格式 | HTTP, DNS, SSH, FTP, SMTP |
+| 传输层 | 端到端通信，端口寻址 | TCP, UDP |
+| 网络层 | IP 寻址与路由转发 | IP, ICMP |
+| 网络接口层 | 帧传输与地址解析 | 以太网, ARP* |
+
+### OSI 七层模型
+
+理论参考模型，与 TCP/IP 四层的对应关系如下。
+
+| TCP/IP | OSI |
+|--------|-----|
+| 应用层 | 7.应用层、6.表示层、5.会话层 |
+| 传输层 | 4.传输层 |
+| 网络层 | 3.网络层 |
+| 网络接口层 | 2.数据链路层、1.物理层 |
+
+### TLS 的位置
+
+TLS 介于传输层与应用层之间，对应 OSI 第 6 层表示层。它对上透明服务应用层，对下依赖传输层提供的可靠通道，负责加密、解密、握手协商、证书验证。TLS 不感知应用数据语义，可服务于多种应用层协议（HTTPS、FTPS、SMTP over TLS 等）。
+
+### ARP 的归属
+
+ARP（Address Resolution Protocol）在不同标准中归属不同：IEEE 将其划分为数据链路层，IETF（RFC 1122）将其划分为链路层与网络层之间的接口协议。本文采用 IETF 的视角，将 ARP 视为服务于数据链路层 MAC 寻址的辅助协议。
+
+### 数据封装与解包
+
+协议栈分层在数据传输中体现为**从内到外封装、从外到内解包**。
+
+```
+Sender (top-down encapsulation):
+  [App Data]
+  → [TCP header] [App Data]
+  → [IP header]  [TCP header] [App Data]
+  → [Frame MAC]  [IP header]  [TCP header] [App Data]  ← outermost
+
+Router forwarding (peel outer, replace, re-wrap):
+  Strip frame header → Read destination IP
+  IP/TCP/App layers unchanged
+  Attach new frame header → Forward
+```
+
+关键不变量：
+
+- IP 地址在端到端传输中保持不变
+- MAC 地址在每一跳之间变化
+- 路由器解包到网络层即停止，不触及传输层与应用层
+
+> *ARP 的分层归属存在争议（IEEE 归入数据链路层，IETF 归入网络层与链路层之间），详见上文「ARP 的归属」一节。
+
+## 核心概念
+
+后续章节会频繁引用以下术语，先做统一定义。
+
+| 术语 | 定义 |
+|------|------|
+| 网络接口（Interface） | 主机或路由器上的一个物理或虚拟网络出口，对应一根链路。`eth0`、`eth1`、`docker0` 都是接口。 |
+| 网段（Subnet） | 由 IP 网络号划分的逻辑范围，与一个物理广播域对应。表示形式 `192.168.1.0/24`。 |
+| 子网掩码（Netmask） | 切分 IP 地址的位边界，描述网段大小。`/24` 等价于 `255.255.255.0`。 |
+| 广播域 | 一个 ARP 广播能够到达的范围，通常等于一个网段。 |
+| 网关（Gateway） | 连接两个或多个网段的设备 IP，跨网段通信必须经过网关。 |
+| 一跳（Hop） | 数据包从一个网段转移到另一个网段的过程。 |
+
+接口、网段、掩码三者的关系是本文的核心：**IP 地址挂在接口上，每个接口连一个网段，掩码描述该网段的规模**。
+
+## 整体数据流向
+
+从主机接入网络到完成一次发包，过程可以划分为三个阶段。后续章节按阶段展开。
+
+```
+Stage 1: Provisioning (DHCP)
+  Router/DHCP server → assigns IP/netmask/gateway → kernel auto-builds routing table
+
+Stage 2: Send decision (Network layer)
+  Application sends → lookup routing table → connected or non-connected?
+
+Stage 3: Link transmission (Data link layer)
+  Connected     → ARP target IP   → send frame
+  Non-connected → ARP gateway IP  → send to gateway → router forwards hop by hop
+```
+
+## 阶段 1：DHCP 接入与路由表构建
+
+### 物理拓扑
+
+路由器是网段的管理者。它的每个接口连着一个独立的物理网络。
+
+```
+              Router
+             /      \
+          eth0      eth1
+      192.168.1.1  10.0.0.1
+           |            |
+   +---------------+ +-----------------+
+   |192.168.1.0/24 | | 10.0.0.0/24     |
+   |  Subnet 1     | |  Subnet 2       |
+   +---------------+ +-----------------+
+           |            |
+      Host A, B...  Host C, D...
+```
+
+### DHCP 分配过程
+
+家庭网络中，路由器通常同时充当 DHCP 服务器；企业网络中则可能由独立的 DHCP 服务器承担，路由器仅做 DHCP Relay。下面以家庭网络为例。
+
+DHCP 使用 UDP，客户端端口 68，服务端端口 67。四步流程称为 DORA：
+
+```
+1. Host A → DHCP Discover (broadcast: "Who is the DHCP server?")
+2. Server → DHCP Offer    ("I am. You may use 192.168.1.10/24, gw 192.168.1.1")
+3. Host A → DHCP Request  ("I want this IP")
+4. Server → DHCP ACK      (lease confirmed)
+```
+
+服务器分配给主机的三个关键信息：
+
+| 信息 | 含义 | 来源 |
+|------|------|------|
+| IP 地址 | 主机在该网段中的身份 | 服务器管理的地址池 |
+| 子网掩码 | 该物理网络的规模 | 接口所连网段的预先规划 |
+| 网关 IP | 跨网段时的转发出口 | 路由器在该网段的接口 IP |
+
+### 路由表自动生成
+
+主机接收 DHCP 分配后，内核根据接口配置自动生成路由表，无需手动维护。
+
+```
+DHCP assigns → IP 192.168.1.10/24, gateway 192.168.1.1
+                            ↓
+Kernel configures eth0:
+  1. Set IP 192.168.1.10/24 on eth0
+     → Compute network number 192.168.1.0
+     → Auto-generate connected route: 192.168.1.0/24 dev eth0
+  2. Install default route: default via 192.168.1.1 dev eth0
+```
+
+掩码的作用是**在接口配置阶段生成直连路由条目**，并非在每次发包时实时计算。直连路由没有 `via` 字段，非直连路由通过 `via` 指定下一跳。
+
+### 多接口场景
+
+IP 地址挂在接口上，主机有几个接口就有几个 IP 身份。每个接口的掩码描述该接口所连物理网络的实际规模。
+
+```bash
+$ ip addr
+eth0:    192.168.1.10/24      # Internal network
+eth1:    203.0.113.10/24      # Public network
+docker0: 172.17.0.1/16        # Container network
+```
+
+不同接口可以接入完全不同的网络，分别走各自的路由出口，互不干扰。
+
+## 阶段 2：发包决策（网络层）
+
+### 路由表结构
+
+路由表的核心字段：**目的网段、下一跳 IP、出接口**。
+
+```bash
+# Host A's routing table
+192.168.1.0/24 dev eth0                  # Connected route, no via
+default via 192.168.1.1 dev eth0         # Non-connected, via gateway
+```
+
+路由表记录的是网段而非具体 IP。当同一个目的 IP 匹配多条路由时，按**最长前缀匹配**原则选择掩码最长的条目。
+
+### 路由条目的三种来源
+
+| 来源 | 触发方式 |
+|------|---------|
+| 直连路由 | 接口配置 IP 后内核自动生成（见上一节） |
+| 静态路由 | 管理员手动配置，例如 `ip route add` |
+| 动态路由协议 | 路由器之间自动交换可达性信息，如 RIP、OSPF、BGP |
+
+动态路由协议的工作机制因协议族而异。以距离向量协议（如 RIP）为例：路由器逐跳传播自己所知道的网段。例如 R1 通告"我能到达 192.168.1.0/24"，R2 接收后将其加入自己的路由表（下一跳记为 R1），R2 再向 R3 通告。链路状态协议（如 OSPF）则通过泛洪链路信息构建完整拓扑图，每个路由器独立计算最短路径。
+
+### 发包决策流程
+
+```
+  Application wants to send to dst IP X
+                  │
+                  ▼
+         Lookup routing table
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+   Connected            Non-connected
+   (no via)             (has via)
+        │                   │
+        ▼                   ▼
+   ARP target IP       ARP gateway IP
+   Send frame          Send frame to gateway
+```
+
+网络层完成两件事：查路由表确定路径、决定 ARP 的目标。MAC 寻址和帧传输由数据链路层处理。
+
+## 阶段 3：链路传输（数据链路层）
+
+### 一跳的本质
+
+**网段是物理网络的边界，一跳的本质是跨越这个边界。**
+
+路由器的每个接口连着独立的网段，所以路由器天然是跨网段的桥梁。同网段内的主机通过 ARP 直接获取 MAC 通信，跨网段则必须经过路由器逐跳转发。
+
+### ARP 只在直连网段内发生
+
+因为 ARP 广播不能跨越网段，所以 ARP 解析在每次进入新网段时独立完成：
+
+1. 主机命中直连路由：ARP 目的 IP
+2. 主机命中非直连路由：ARP 网关 IP
+3. 路由器收到包：根据下一跳所在接口的网段，ARP 下一跳 IP
+
+### 完整端到端流程
+
+下面追踪一个跨网段包的传输过程。
+
+```
+Host A (192.168.1.10) sends to Host B (10.0.0.20)
+
+[Host A - Network layer]
+  Lookup routing table
+  10.0.0.20 does not match 192.168.1.0/24
+  → hits "default via 192.168.1.1"
+  → non-connected, next hop = gateway
+
+[Host A - Link layer]
+  ARP: "Who has 192.168.1.1?" → Router replies MAC-R1
+  Frame: [src MAC=A, dst MAC=R1] [src IP=192.168.1.10, dst IP=10.0.0.20]
+
+[Router - Network layer]
+  Receive frame, strip header, read dst IP 10.0.0.20
+  Lookup routing table: 10.0.0.0/24 dev eth1 (connected)
+  → direct send
+
+[Router - Link layer]
+  ARP: "Who has 10.0.0.20?" → Host B replies MAC-B
+  Frame: [src MAC=R1, dst MAC=B] [src IP=192.168.1.10, dst IP=10.0.0.20]
+  IP layer unchanged
+
+[Host B receives]
+```
+
+### 每一跳的处理步骤
+
+IP 头中的 TTL（Time To Live）字段在每一跳减 1，归零时丢弃该包，以此防止路由环路。以下是路由器转发时的完整步骤：
+
+```
+Router receives a frame:
+  1. Parse frame header, verify dst MAC matches own interface
+  2. Read destination IP from IP header
+  3. Lookup routing table, find next-hop IP and outgoing interface
+  4. ARP for next-hop MAC (or hit ARP cache)
+  5. Rewrite frame header (src MAC = self, dst MAC = next hop)
+  6. Decrement TTL (prevents routing loops)
+  7. Forward via outgoing interface
+```
+
+### 多跳场景下的 ARP 次数
+
+```
+Host A → Router R1 → Router R2 → Router R3 → Host B
+
+ARP resolutions (assuming no cache):
+  Host A ARPs R1     (A→R1 subnet)
+  R1 ARPs R2         (R1→R2 subnet)
+  R2 ARPs R3         (R2→R3 subnet)
+  R3 ARPs Host B     (R3→B subnet)
+```
+
+每一跳之间 MAC 地址变化，端到端的 IP 地址保持不变。正如上文「数据封装与解包」一节所述，这一不变量是 IP 协议端到端语义的基础。
