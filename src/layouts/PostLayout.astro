@@ -110,4 +110,34 @@ const updatedStr = updatedDate ? updatedDate.toISOString().split('T')[0] : null;
     max-width: 100%;
     border-radius: var(--radius-md);
   }
+
+  .post-content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--space-lg) 0;
+    font-size: 0.9em;
+  }
+
+  .post-content :global(th),
+  .post-content :global(td) {
+    padding: var(--space-sm) var(--space-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .post-content :global(th) {
+    font-weight: 600;
+    color: var(--fg-tertiary);
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .post-content :global(tr:last-child td) {
+    border-bottom: none;
+  }
+
+  .post-content :global(table + table) {
+    margin-top: calc(-1 * var(--space-sm));
+  }
 </style>
