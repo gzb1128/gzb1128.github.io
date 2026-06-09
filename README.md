@@ -1,8 +1,17 @@
-# Zephyr's Lab
+# Zephyr's Lab — Notes on agents, kernels, and the systems in between.
 
-Personal technical blog. Notes on agents, kernels, and the systems in between.
+[![Deploy](https://github.com/gzb1128/gzb1128.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/gzb1128/gzb1128.github.io/actions/workflows/deploy.yml)
 
 **Live**: https://gzb1128.github.io
+
+## Local Development
+
+```bash
+npm ci
+npm run dev      # http://localhost:4321
+```
+
+Requires Node >= 22.12.0.
 
 ## Stack
 
