@@ -1,6 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import { getTagColor, type Category } from '../utils/tags';
+import Comments from '../components/interactive/Comments.tsx';
 
 interface Props {
   title: string;
@@ -36,6 +37,7 @@ const updatedStr = updatedDate ? updatedDate.toISOString().split('T')[0] : null;
     <div class="post-content">
       <slot />
     </div>
+    <Comments client:visible />
   </article>
 </BaseLayout>
 
