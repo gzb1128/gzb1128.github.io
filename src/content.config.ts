@@ -8,7 +8,7 @@ const posts = defineCollection({
     description: z.string().optional(),
     pubDate: z.coerce.date(),
     updatedDate: z.coerce.date().optional(),
-    category: z.enum(['ai-agent', 'cloud-native', 'algorithm', 'cryptography', 'essay']),
+    category: z.enum(['ai-agent', 'cloud-native', 'algorithm', 'cryptography', 'essay', 'network']),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
   }),
