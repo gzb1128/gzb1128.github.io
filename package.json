@@ -18,13 +18,17 @@
     "@astrojs/sitemap": "^3.7.3",
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@giscus/react": "^3.1.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "astro": "^6.4.4",
     "katex": "^0.17.0",
+    "mermaid": "^11.15.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "satori": "^0.26.0",
     "sharp": "^0.34.3"
   },
   "devDependencies": {

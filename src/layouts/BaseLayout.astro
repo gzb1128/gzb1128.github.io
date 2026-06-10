@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Header from '../components/core/Header.astro';
 import Footer from '../components/core/Footer.astro';
+import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   title: string;
@@ -23,6 +24,8 @@ const {
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    <ClientRouter />
+    <slot name="head" />
     <script is:inline>
       const theme = localStorage.getItem('theme') || 'dark';
       document.documentElement.setAttribute('data-theme', theme);
@@ -35,7 +38,7 @@ const {
     </main>
     <Footer />
     <script is:inline>
-      document.querySelectorAll('pre').forEach(pre => {
+      document.querySelectorAll('pre:not(.mermaid)').forEach(pre => {
         const btn = document.createElement('button');
         btn.className = 'copy-btn';
         btn.textContent = 'copy';
@@ -50,6 +53,41 @@ const {
         });
         pre.appendChild(btn);
       });
+    </script>
+    <script>
+      if (document.querySelector('pre.mermaid')) {
+        const mermaid = await import('mermaid');
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+
+        mermaid.default.initialize({
+          startOnLoad: false,
+          theme: isLight ? 'default' : 'dark',
+          fontFamily: 'var(--font-mono)',
+          themeVariables: isLight
+            ? {
+                darkMode: false,
+                background: '#FFFFFF',
+                primaryColor: '#E5E7EB',
+                primaryTextColor: '#08090A',
+                primaryBorderColor: '#D1D5DB',
+                lineColor: '#5E6AD2',
+                secondaryColor: '#F3F4F6',
+                tertiaryColor: '#F7F8F8',
+              }
+            : {
+                darkMode: true,
+                background: '#08090A',
+                primaryColor: '#2A2D33',
+                primaryTextColor: '#F7F8F8',
+                primaryBorderColor: '#3A3D44',
+                lineColor: '#5E6AD2',
+                secondaryColor: '#1C1C1F',
+                tertiaryColor: '#0F1011',
+              },
+        });
+
+        await mermaid.default.run({ querySelector: 'pre.mermaid' });
+      }
     </script>
   </body>
 </html>

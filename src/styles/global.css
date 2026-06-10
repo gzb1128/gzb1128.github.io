@@ -66,17 +66,6 @@ pre {
 	counter-reset: line;
 }
 
-pre::before {
-	content: "● ● ●";
-	position: absolute;
-	top: 10px;
-	left: var(--space-lg);
-	font-size: 0.5rem;
-	letter-spacing: 3px;
-	color: var(--fg-disabled);
-	opacity: 0.5;
-}
-
 pre[data-language]::after {
 	content: attr(data-language);
 	position: absolute;
@@ -149,4 +138,23 @@ h3 {
 h4 {
 	font-size: 1.125rem;
 	font-weight: 500;
+}
+
+.mermaid-figure {
+	margin: var(--space-xl) 0;
+	text-align: center;
+	overflow-x: auto;
+}
+
+.mermaid-figure pre.mermaid {
+	background: transparent;
+	border: none;
+	padding: 0;
+	margin: 0;
+	font-family: var(--font-mono);
+}
+
+.mermaid-figure svg {
+	max-width: 100%;
+	height: auto;
 }

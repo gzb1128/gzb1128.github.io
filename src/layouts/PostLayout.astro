@@ -9,15 +9,35 @@ interface Props {
   category: Category;
   description?: string;
   updatedDate?: Date;
+  slug?: string;
+  wordCount?: number;
+  readingTime?: number;
+  prevPost?: { title: string; slug: string };
+  nextPost?: { title: string; slug: string };
 }
 
-const { title, pubDate, category, description, updatedDate } = Astro.props;
+const { title, pubDate, category, description, updatedDate, slug, wordCount, readingTime, prevPost, nextPost } = Astro.props;
+
+const ogImage = slug ? `${Astro.site}posts/${slug}/og.png` : '';
 
 const dateStr = pubDate.toISOString().split('T')[0];
 const updatedStr = updatedDate ? updatedDate.toISOString().split('T')[0] : null;
 ---
 
 <BaseLayout title={`${title} — Zephyr's Lab`} description={description}>
+  <Fragment slot="head">
+    {slug && (
+      <>
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description || ''} />
+        <meta property="og:type" content="article" />
+        <meta property="og:image" content={ogImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:image" content={ogImage} />
+      </>
+    )}
+  </Fragment>
   <article class="post">
     <header class="post-header">
       <h1 class="post-title">{title}</h1>
@@ -32,11 +52,32 @@ const updatedStr = updatedDate ? updatedDate.toISOString().split('T')[0] : null;
         >
           [{category}]
         </span>
+        {wordCount != null && readingTime != null && (
+          <span class="post-reading">{readingTime} min · {wordCount} words</span>
+        )}
       </div>
     </header>
     <div class="post-content">
       <slot />
     </div>
+    {(prevPost || nextPost) && (
+      <nav class="post-nav">
+        <div class="post-nav-row">
+          {prevPost ? (
+            <a href={`/posts/${prevPost.slug}/`} class="post-nav-link post-nav-prev">
+              <span class="post-nav-label">← prev</span>
+              <span class="post-nav-title">{prevPost.title}</span>
+            </a>
+          ) : <div />}
+          {nextPost ? (
+            <a href={`/posts/${nextPost.slug}/`} class="post-nav-link post-nav-next">
+              <span class="post-nav-label">next →</span>
+              <span class="post-nav-title">{nextPost.title}</span>
+            </a>
+          ) : <div />}
+        </div>
+      </nav>
+    )}
     <Comments client:visible />
   </article>
 </BaseLayout>
@@ -75,6 +116,10 @@ const updatedStr = updatedDate ? updatedDate.toISOString().split('T')[0] : null;
   .post-category {
     font-family: var(--font-mono);
     font-size: 0.8rem;
+  }
+
+  .post-reading {
+    color: var(--fg-disabled);
   }
 
   .post-content {
@@ -141,5 +186,66 @@ const updatedStr = updatedDate ? updatedDate.toISOString().split('T')[0] : null;
 
   .post-content :global(table + table) {
     margin-top: calc(-1 * var(--space-sm));
+  }
+
+  .post-nav {
+    margin-top: var(--space-3xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--border-default);
+  }
+
+  .post-nav-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-lg);
+  }
+
+  .post-nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    text-decoration: none;
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
+    transition: background 200ms ease;
+  }
+
+  .post-nav-link:hover {
+    background: var(--bg-hover);
+  }
+
+  .post-nav-prev {
+    align-items: flex-start;
+  }
+
+  .post-nav-next {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .post-nav-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-disabled);
+  }
+
+  .post-nav-title {
+    font-size: 0.9rem;
+    color: var(--fg-secondary);
+  }
+
+  .post-nav-link:hover .post-nav-title {
+    color: var(--fg-primary);
+  }
+
+  @media (max-width: 640px) {
+    .post-nav-row {
+      flex-direction: column;
+    }
+
+    .post-nav-next {
+      align-items: flex-start;
+      text-align: left;
+    }
   }
 </style>

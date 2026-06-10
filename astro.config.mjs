@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeMermaid from './src/plugins/rehype-mermaid';
 
 export default defineConfig({
 	site: 'https://gzb1128.github.io',
@@ -19,7 +20,7 @@ export default defineConfig({
 			},
 		},
 		remarkPlugins: [remarkMath],
-		rehypePlugins: [rehypeKatex],
+		rehypePlugins: [rehypeKatex, rehypeMermaid],
 	},
 	vite: {
 		plugins: [tailwindcss()],

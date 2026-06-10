@@ -1,23 +1,22 @@
 ---
 import ThemeToggle from '../interactive/ThemeToggle';
 import Search from '../interactive/Search';
-
-const nav = [
-  { href: '/posts', label: 'posts' },
-  { href: '/about', label: 'about' },
-  { href: '/rss.xml', label: 'rss' },
-];
+import MobileMenu from '../interactive/MobileMenu';
+import { NAV_ITEMS } from '../../data/nav';
 ---
 
 <header class="header">
   <nav class="header-nav">
     <a href="/" class="header-logo">$ zephyr.lab</a>
     <div class="header-links">
-      {nav.map(({ href, label }) => (
-        <a href={href}>{label}</a>
+      {NAV_ITEMS.map(({ href, label }) => (
+        <a href={href} class="desktop-link">{label}</a>
       ))}
-      <Search client:load />
+      <div class="desktop-only">
+        <Search client:load />
+      </div>
       <ThemeToggle client:load />
+      <MobileMenu client:load />
     </div>
   </nav>
 </header>
@@ -30,7 +29,7 @@ const nav = [
     display: flex;
     align-items: center;
     z-index: 100;
-    background: rgba(8, 9, 10, 0.7);
+    background: var(--bg-header);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-subtle);
   }
@@ -65,5 +64,32 @@ const nav = [
 
   .header-links a:hover {
     color: var(--fg-primary);
+  }
+
+  .desktop-only {
+    display: flex;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .desktop-link {
+      display: none;
+    }
+
+    .desktop-only {
+      display: none;
+    }
+  }
+
+  :global(.mobile-toggle) {
+    display: none !important;
+  }
+
+  @media (max-width: 768px) {
+    :global(.mobile-toggle) {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+    }
   }
 </style>

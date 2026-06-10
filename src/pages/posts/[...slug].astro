@@ -3,15 +3,32 @@ import { getCollection, render } from 'astro:content';
 import PostLayout from '../../layouts/PostLayout.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts');
-  return posts.map((post) => ({
+  const allPosts = (await getCollection('posts'))
+    .filter((p) => !p.data.draft)
+    .sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
+  return allPosts.map((post) => ({
     params: { slug: post.id },
-    props: { post },
+    props: { post, allPosts },
   }));
 }
 
-const { post } = Astro.props;
+const { post, allPosts } = Astro.props;
 const { Content } = await render(post);
+
+const currentIndex = allPosts.findIndex((p) => p.id === post.id);
+const prev = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
+const next = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
+
+const cleanBody = (post.body || '')
+  .replace(/^---[\s\S]*?---/, '')
+  .replace(/```[\s\S]*?```/g, '')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+  .replace(/\[[^\]]*\]\([^)]*\)/g, (m) => m.replace(/\[([^\]]*)\].*/, '$1'))
+  .replace(/^#{1,6}\s+/gm, '')
+  .replace(/^\s*import\s+.*$/gm, '');
+const wordCount = cleanBody.trim() ? cleanBody.trim().split(/\s+/).length : 0;
+const readingTime = Math.max(1, Math.ceil(wordCount / 300));
 ---
 
 <PostLayout
@@ -20,6 +37,11 @@ const { Content } = await render(post);
   category={post.data.category}
   description={post.data.description}
   updatedDate={post.data.updatedDate}
+  slug={post.id}
+  wordCount={wordCount}
+  readingTime={readingTime}
+  prevPost={prev ? { title: prev.data.title, slug: prev.id } : undefined}
+  nextPost={next ? { title: next.data.title, slug: next.id } : undefined}
 >
   <Content />
 </PostLayout>

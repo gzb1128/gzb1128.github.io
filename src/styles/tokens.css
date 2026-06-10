@@ -32,6 +32,8 @@
 	--bg-tertiary: #1C1C1F;
 	--bg-hover: #16171A;
 
+	--bg-header: rgba(8, 9, 10, 0.7);
+
 	--fg-primary: #F7F8F8;
 	--fg-secondary: #B4B8BD;
 	--fg-tertiary: #8A8F98;
@@ -56,6 +58,8 @@
 	--bg-secondary: #F7F8F8;
 	--bg-tertiary: #F3F4F6;
 	--bg-hover: #F0F1F3;
+
+	--bg-header: rgba(255, 255, 255, 0.7);
 
 	--fg-primary: #08090A;
 	--fg-secondary: #3C4149;
