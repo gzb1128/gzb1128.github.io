@@ -1,0 +1,157 @@
+---
+title: "仓库即环境：让 Agent 在你的代码库里真正干活"
+description: "三条工程哲学：可见的入口、不腐烂的组织记忆、沉淀成工作流的质量门禁。"
+pubDate: 2026-06-11T08:00:00Z
+category: "ai-agent"
+tags: ["agent", "opencode", "workflow", "engineering"]
+---
+
+## 现状
+
+编码、调试、review、提交，Agent 已经能参与很多日常开发环节。下一步的问题是：什么时候能独立推进，什么时候还需要人反复兜底。
+
+瓶颈往往不在个人使用技巧，而在仓库是否提供上下文、边界、验证和组织记忆。大多数工程系统最初是为人类协作设计的，不是为 Agent 执行设计的。
+
+> Agent 的上限，不只由模型决定，也由仓库和工作流决定。
+
+## 参照：OpenAI 的做法
+
+OpenAI 在 [Harness Engineering](https://openai.com/index/harness-engineering/) 一文中描述了他们如何把仓库改造成 Agent 的工作环境：分层 AGENTS.md、专属工具、Skill 编排、CI 反馈闭环，让 Codex 能端到端完成任务。
+
+我们能从中拿走的不是他们达到的那个程度，而是支撑这件事的工程条件：**可见的入口、可维护的记忆、默认执行的门禁**。
+
+## 哲学一：仓库是 Agent 的工作环境
+
+Agent 需要知道先读什么、下一步去哪、哪些规则不能违反。知识要分层：根文档只放地图，细节下沉到就近位置。
+
+### 反例：AGENTS.md 越像百科，Agent 越难找到入口
+
+把所有规范、架构、踩坑记录塞进一个 800 行的根 AGENTS.md，会发生什么：Agent 读完后忘了用户问题；上下文被吃掉；过期规则也照搬。OpenAI 文章把这类失败总结为三类：挤占上下文、过多指导导致无效、文件快速腐烂。
+
+核心问题不是文档写得少，而是把入口和细节挤在了同一层。
+
+### 改进：AGENTS.md 是地图，不是百科全书
+
+```
+AGENTS.md (~100 行)
+├── Quick Reference：build / test / generate
+├── Common Tasks：想做什么 → 去哪里看
+├── Golden Rules：违反就拒绝合并
+└── Module Rules：子包 AGENTS.md 索引
+
+docs/
+├── codemaps/      # 代码地图
+├── rules/         # 编码规范
+├── verify/        # 验证流程
+└── troubleshoot/  # 线上故障调查
+```
+
+根 AGENTS.md 只是入口，子模块有各自的 AGENTS.md。从一个小入口开始，按需深入。
+
+---
+
+## 哲学二：经验必须变成组织记忆
+
+组织记忆有两个问题要同时解决：
+
+- **隐性知识会丢**：一次调试里发现的隐藏依赖，如果不沉淀，下一个 Agent 还会重新踩坑。
+- **显性知识会腐烂**：写进文档的规则如果不审计，会从帮助变成误导。
+
+> 组织记忆不是多写文档，而是让经验能被写入、可验证、可晋级、可淘汰。
+
+### 反例：隐性知识和过期知识都会误导 Agent
+
+**没写进去**：某个服务的状态常量必须和控制器同步，这条经验只在调过的人脑袋里。
+
+**写进去后过期**：子包 AGENTS.md 里还写着旧状态机顺序，Agent 读到后会当成最新事实执行。人类读到过期文档会怀疑，Agent 往往会认真执行。
+
+### 改进：`/learn` 沉淀经验，`/remember` 定期体检
+
+- **`/learn` 写入**：只记录无法从代码、git log 或已有文档推导的隐藏知识（隐藏依赖、误导性错误、关键顺序、项目怪癖）。
+- **`/remember` 体检**：验证已有知识是否过期、重复、错层或冲突；只出报告，等人审批后再改。
+
+---
+
+## 哲学三：质量不能靠提醒，要沉淀成工作流
+
+把一次失败沉淀成 Skill、规则、门禁，才能让下一个任务自动执行。
+
+### 反例：让 Agent 自己提交代码，质量噪声会暴露出来
+
+| 问题类型 | 典型表现 |
+|----------|----------|
+| 多余注释 | `// handle error`、`// check nil` 这种没有信息量的注释 |
+| 过度防御 | 重复 nil check、重复 err check、`context.TODO` |
+| 空洞提交 | commit message 只写 `improve code quality`，没有解释为什么改 |
+
+这不是 Agent 写得差，是工作流缺一道默认门禁。在 prompt 里反复提醒——同一个上下文里复读的规则，几乎等于没有。
+
+### 改进：把 review 变成 Agent 工作流的一部分
+
+```
+用户说 commit → clean-commit → quality-reviewer → commit
+```
+
+| Gate | 内容 |
+|------|------|
+| Gate 1 | 清理低信息量改动（注释、冗余防御） |
+| Gate 2 | 三向 review：简化、质量、效率 |
+| Gate 3 | lint affected packages |
+| Gate 4 | test affected packages |
+
+门禁不是给人看的，是默认会跑的。commit 是质量门禁通过后的产物，不是先 commit 再 review。
+
+---
+
+## 系统视图
+
+入口、记忆、门禁，组成 Agent 的运行环境。
+
+| 层 | 机制 | 作用 |
+|----|------|------|
+| 入口 | AGENTS.md、codemaps、rules | 告诉 Agent 从哪里开始、按什么边界行动 |
+| 记忆 | `/learn`、`/remember` | 把经验写入、验证、提升、删除 |
+| 门禁 | Skill pipeline、lint、test | 把质量要求变成默认流程 |
+
+## 技术细节：为什么必须是 Skill？
+
+把质量门禁实现为 Skill 而不是 Command 或 Agent，是有原因的：
+
+| 机制 | 是否注入子 Agent 上下文 | 结论 |
+|------|------------------------|------|
+| Command | 不注入 | 子 Agent 看不见 |
+| Agent | 可以独立运行 | 在 OpenCode 中不能再启动子 Agent |
+| Skill | 注入 system prompt | 能自主加载和组合 |
+
+Skill 是目前唯一能让主 Agent 自主调用、子 Agent 也看得见的机制。包含并行审查的工作流必须由主 Agent 通过 Skill 执行。
+
+## 效果：改变的是工程节奏
+
+| 场景 | 变化 |
+|------|------|
+| Onboarding | 新人跟 Agent 配对，按 AGENTS.md → codemap → 源码路径进入项目 |
+| 跨模块修改 | 子包 AGENTS.md 里的同步清单提醒 Agent 同步更新相关文档和模块 |
+| Code Review | 机械性问题在 commit 前过滤，人类聚焦业务逻辑 |
+| 技术债 | 每次提交前做小规模清理，而不是等债务堆积 |
+
+## 可复制的五步路径
+
+不必按顺序，按团队最痛的环节先做。
+
+1. **写 100 行 AGENTS.md**：Quick Reference、任务索引、Golden Rules。
+2. **拆 docs 结构**：codemaps 导航代码，rules 固化规范，verify 验证行为，troubleshoot 复盘线上故障。
+3. **建立 `/learn`**：只记录不可推导的隐藏知识。
+4. **建立质量门禁 Skill**：clean-commit、quality-reviewer 串联成 pipeline。
+5. **定期 `/remember`**：体检过期、重复、错层和冲突。
+
+以上 Skills 已打包为开源插件集合 [skill-forge](https://github.com/gzb1128/skill-forge)，感兴趣可以直接看项目。
+
+## 结语
+
+三个问题留给自己：
+
+- 你的项目入口，是只方便人读，还是也方便 Agent 执行？
+- 你的仓库里，有多少知识只存在于资深同事脑袋里？
+- 你 review 代码时，有多少时间花在机械性问题上？
+
+不要让 Agent 更努力，要把工程经验变成它可见、可执行、可验证、可复用的系统。
