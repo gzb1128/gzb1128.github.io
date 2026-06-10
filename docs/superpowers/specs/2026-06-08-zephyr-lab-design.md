@@ -82,26 +82,67 @@ design.md 的 Editor 风格细节部分已拆解到各组件：
 
 ```css
 /* Sans (UI、正文) */
---font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+--font-sans: "Inter Variable", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
 /* Mono (代码、技术元素、数字) */
---font-mono: "JetBrains Mono Variable", "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
+--font-mono: "JetBrains Mono Variable", "Noto Sans Mono CJK SC", "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
 
 /* Serif (可选，用于长文章引用) */
 --font-serif: "Source Serif 4", Georgia, serif;
 ```
 
+### 中英文混排
+
+- 盘古之白：中英文之间自动加空格，构建时处理（remark 插件或 pangu.js）
+- 中文标点：使用全角标点，不混用半角
+- Noto Sans SC 加载策略：子集化（GB2312 常用字），font-display: swap，按需加载
+
+### 正文排版间距
+
+用于文章详情页 `.prose` 容器内的元素间距。
+间距值为建议值，可基于 space token 微调。
+
+| 元素        | margin-top       | margin-bottom    |
+|------------|------------------|------------------|
+| `p`        | 0                | 24px (space-lg)  |
+| `h2`       | 48px (space-2xl) | 16px (space-md)  |
+| `h3`       | 32px (space-xl)  | 8px  (space-sm)  |
+| `h4`       | 24px (space-lg)  | 8px  (space-sm)  |
+| `ul`/`ol`  | 0                | 24px (space-lg)  |
+| `blockquote` | 24px (space-lg)| 24px (space-lg)  |
+| `pre`      | 24px (space-lg)  | 24px (space-lg)  |
+
+紧邻规则：h2 紧跟 h1 时（文章第一个小节），margin-top 减半为 32px。
+
 ### 类型层级
 
 ```
+Display  clamp(2.5rem, 4vw, 3.25rem)  weight 510  lh 1.1   ls -0.04em  ← Hero 专用
 H1   2.25rem  font-bold  letter-spacing -0.02em   (文章主标题)
-H2   1.5rem   font-semibold letter-spacing -0.01em (二级标题)
+H2   1.625rem font-semibold letter-spacing -0.01em (二级标题)
 H3   1.25rem  font-semibold
 H4   1.125rem font-medium
 Body 1rem     line-height 1.7   (正文，长行高便于阅读)
 Meta 0.875rem font-mono color-tertiary (时间、tag、面包屑)
 Code 0.9rem   font-mono                (内联代码)
 ```
+
+Display 层级仅用于首页 Hero 的 `$ zephyr.lab`。文章详情页的标题使用 H1 (2.25rem)。不在其他任何地方使用 Display 尺寸。
+
+### 字体加载策略
+
+v1 策略（基础）：
+- 所有 @font-face 使用 font-display: swap
+- Inter Variable：`<link rel="preload">` 异步预加载，不阻塞渲染
+- JetBrains Mono：仅在包含代码块的页面预加载
+- 中文 web font（如需加载 Noto Sans SC）：子集化 + font-display: swap + 按需
+
+渲染回退链：系统 sans-serif → Inter → 正式排版
+确保回退期间文字可读，无布局偏移（size-adjust 可选）。
+
+v2 可选增强：
+- 首屏关键路径只加载 Inter Regular + Semibold 静态文件（~40KB gzip）
+- Variable 版本异步加载，用 `<link rel="preload">` 而非 @import
 
 ## 关键尺寸
 
@@ -121,7 +162,7 @@ Code 0.9rem   font-mono                (内联代码)
 ```
 ┌──────────────────────────────────────────────────┐
 │  Header (sticky, 56px)                           │
-│  $ zephyr.lab          [posts] [about] [rss] [☾] │
+│  $ zephyr.lab              [posts] [about] [rss] │
 ├──────────────────────────────────────────────────┤
 │                                                  │
 │  Hero                                            │
@@ -148,8 +189,10 @@ Code 0.9rem   font-mono                (内联代码)
 
 - **高度**：56px，sticky，初始透明
 - **滚动后**：背景变 `rgba(8,9,10,0.7)` + `backdrop-filter: blur(12px)` + 底部细边框
-- **logo**：`$ zephyr.lab`（等宽字体，accent 蓝色）
-- **导航**：Posts / About / RSS / 主题切换
+- **logo**：`$ zephyr.lab`（等宽字体）
+  - `"$"` → `--accent-primary` (#5E6AD2)，视觉锚点，与正文标题中的 `$` prompt 形成系统级呼应
+  - `"zephyr.lab"` → `--fg-primary` (#F7F8F8)，用前景色保持可读性，不与 accent 色竞争注意力
+- **导航**：Posts / About / RSS
 - **不要**做 nexu.io 那种胶囊变形，保持克制
 
 ### 2. Hero（首页）
@@ -189,6 +232,18 @@ TOPICS
   - `[essay]` → `--syntax-comment` (#6A737D, 灰)
 - 标签 hover 时统一变 accent 蓝色
 - Transition Zone 展示全部 5 个分类（与 content collection schema 一致）
+
+#### 已知问题（v2 解决）
+
+上述 syntax 色在 Light Mode (#FFFFFF 背景) 上的对比度：
+  ai-agent  (#CE9178) → 3.0:1 ❌
+  cloud-native (#C586C0) → 3.5:1 ❌
+  algorithm (#B5CEA8) → 2.6:1 ❌
+  cryptography (#DCDCAA) → 1.8:1 ❌
+  essay     (#6A737D) → 4.5:1 ✅
+
+v1 不包含 Light Mode，此问题不影响当前交付。
+实现 Light Mode 时需要为 tag 定义加深色或改用色块方案。
 
 ### 4. Post List
 
@@ -343,7 +398,6 @@ src/
 │   │   ├── PostList.astro
 │   │   └── CodeBlock.astro
 │   ├── interactive/   # 需要 JS 的组件，独立目录
-│   │   ├── ThemeToggle.tsx
 │   │   ├── Search.tsx     # Pagefind UI
 │   │   └── CopyButton.tsx
 │   └── animated/      # 未来动画组件预留
@@ -385,6 +439,25 @@ src/
 - 站点 description：`Notes on agents, kernels, and the systems in between.`
 - robots.txt + sitemap.xml + RSS（Astro 集成插件）
 
+## Content Schema
+
+### Frontmatter
+
+每篇文章的 frontmatter 字段：
+
+```yaml
+---
+title: string        # 文章标题
+date: YYYY-MM-DD     # 发布日期
+tags: string[]       # 分类标签，与 Transition Zone 配色映射一致
+draft: boolean?      # 草稿标记，构建时排除
+hasMath: boolean?    # 文章包含 LaTeX 公式 → 加载 KaTeX CSS（构建时已由 rehype-katex 渲染）
+hasDiagram: boolean? # 文章包含 Mermaid 图表 → 动态加载 Mermaid JS
+---
+```
+
+`hasMath: true` 的唯一作用是条件加载 KaTeX CSS (~25KB gzip)。KaTeX 的数学渲染已在构建时完成（remark-math + rehype-katex），运行时零 JS。Mermaid 必须在客户端运行，`hasDiagram: true` 触发动态 import。
+
 ## 不做的事
 
 明确**不做**以下，避免 scope creep：
@@ -397,13 +470,60 @@ src/
 - ❌ 第一版加滚动动画（保持轻量）
 - ❌ 自建评论/点赞系统
 
+## 阶段划分
+
+### v1 — 核心体验（Dark Mode Only）
+
+**页面**
+- 文章列表页（首页）
+- 文章详情页
+- About 页
+
+**组件**
+- Header（滚动背景切换，无 theme toggle）
+- Footer
+- PostItem（文章列表行）
+- TagList
+- CodeBlock（Shiki dark theme）
+- CopyButton（代码块复制）
+
+**排版**
+- 完整排版系统（含间距规范）
+- Inter + JetBrains Mono + 中文 fallback
+- font-display: swap + preload
+
+**内容**
+- Shiki 代码高亮（dark theme only）
+- KaTeX 构建时渲染（条件加载 CSS）
+
+**响应式**
+- 桌面端优先，移动端基本可用
+
+### v2 — 功能增强
+
+- Light mode 主题 + tag 对比度修复
+- Theme toggle 组件
+- Giscus 评论系统（懒加载）
+- Pagefind 搜索
+- Mermaid 图表支持
+- OG 图自动生成（含中文字体处理）
+- RSS feed
+- Post list 分页策略
+
+### v3 — 动画层
+
+- 入场动画（GSAP / Framer Motion）
+- 滚动驱动动画
+- 页面过渡动画
+- 交互反馈微动画
+
 ## 验收标准
 
 第一版上线时，应该满足：
 
 - [ ] Lighthouse 性能分 ≥ 95（mobile + desktop）
 - [ ] 首屏 LCP < 1.5s
-- [ ] 默认 dark mode，可切换 light
+- [x] Dark mode only（Light mode 延后至 v2）
 - [ ] 代码块高亮 + 复制 + 行号 + 语言标签
 - [ ] RSS feed 可订阅
 - [ ] 站内搜索可用

@@ -1,4 +1,30 @@
 @import "tailwindcss";
+
+@theme {
+	--color-bg-primary:   #08090A;
+	--color-bg-secondary: #0F1011;
+	--color-bg-tertiary:  #1C1C1F;
+	--color-bg-hover:     #16171A;
+
+	--color-fg-primary:   #F7F8F8;
+	--color-fg-secondary: #B4B8BD;
+	--color-fg-tertiary:  #8A8F98;
+	--color-fg-disabled:  #4D5158;
+
+	--color-accent-primary:   #5E6AD2;
+	--color-accent-secondary: #7B85E8;
+
+	--color-border-subtle:  #1F2125;
+	--color-border-default: #2A2D33;
+	--color-border-strong:  #3A3D44;
+
+	--font-sans: "Inter Variable", "PingFang SC", "Noto Sans SC",
+		"Microsoft YaHei", -apple-system, BlinkMacSystemFont,
+		system-ui, sans-serif;
+	--font-mono: "JetBrains Mono Variable", "Noto Sans Mono CJK SC",
+		"Geist Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
 @import "./tokens.css";
 @import "katex/dist/katex.min.css";
 

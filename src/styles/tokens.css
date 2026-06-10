@@ -1,6 +1,6 @@
 :root {
-	--font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-	--font-mono: "JetBrains Mono Variable", "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
+	--font-sans: "Inter Variable", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+	--font-mono: "JetBrains Mono Variable", "Noto Sans Mono CJK SC", "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
 	--font-serif: "Source Serif 4", Georgia, serif;
 
 	--max-width-prose: 720px;

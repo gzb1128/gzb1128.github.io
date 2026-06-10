@@ -123,6 +123,28 @@ Astro 5
 - **每个独立功能一个 commit** — 方便回滚 AI 改坏的代码
 - **不要 commit `node_modules`、`dist`、`.astro` 缓存**
 
+### 组件目录约定
+
+```
+src/components/
+  core/          → 静态 UI 组件，零 JS（Header, Footer, PostItem, TagList...）
+  interactive/   → 需要水合的组件（CopyButton, SearchModal...），使用 client:visible
+  animated/      → 预留，v3 使用（GSAP / Framer Motion 动画组件）
+```
+
+规则：
+- core/ 下的组件不引入任何 `<script>` 或 `client:*` 指令
+- interactive/ 下的组件使用 client:visible 水合（最小化 JS 体积）
+- animated/ 目录 v1 创建但保持空，放一个 .gitkeep
+
+### Tailwind CSS Token 规则
+
+- 颜色来源以设计规约的 hex 值为准，不引入未经验证的 oklch 转换
+- 通过 Tailwind 4 @theme 注册自定义 token（见 src/styles/global.css）
+- 模板中统一使用 token 类名：bg-bg-primary, text-fg-primary, border-border-subtle
+- 禁止使用 Tailwind 内置灰色系：bg-gray-900, text-gray-200, border-gray-700 等
+- 新增颜色必须先在规约中定义 token，再注册到 @theme
+
 ## 技术文章撰写原则
 
 每条原则下都有 RED（错误示范）和 GREEN（正确做法）。这些是从实际写作中沉淀的踩坑教训。

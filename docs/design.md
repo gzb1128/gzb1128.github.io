@@ -2,6 +2,8 @@
 
 > **已废弃** — 本文档已被 `docs/superpowers/specs/2026-06-08-zephyr-lab-design.md` 替代。
 > 如有冲突，以新 spec 为准。
+>
+> Hero 设计以正式规约（vertical prompt lines `$ zephyr.lab`）为准。本文档中的 `$ whoami` 终端风格已过时。
 
 视觉与交互设计规范。后续 AI Agent 实现 UI 时以此为准。
 
