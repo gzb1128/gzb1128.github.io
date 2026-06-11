@@ -7,7 +7,7 @@
 **站点名**：Zephyr's Lab
 **Tagline**：Notes on agents, kernels, and the systems in between.
 **当前目录**：`~/code/zephyr-lab/`（本地开发名）
-**GitHub 仓库**（待创建）：`gzb1128/gzb1128.github.io`
+**GitHub 仓库**：[gzb1128/gzb1128.github.io](https://github.com/gzb1128/gzb1128.github.io)
 
 ## 用户画像
 
@@ -31,15 +31,15 @@ CSDN 旧内容**保留不迁移**，新内容发布到 Zephyr's Lab。两侧做�
 - 杂谈（technical essays、reading notes）
 - 偶尔回顾算法/密码学话题
 
-**内容分类规划**：
+**内容分类规划**（子目录按需创建，文章少时直接平铺在 `posts/` 下）：
 ```
 src/content/posts/
 ├── ai-agent/       # AI Agent 工具与生态
-├── cloud-native/   # K8s、controller-runtime
-├── network/        # 计算机网络
-├── algorithm/      # 算法笔记（与 CSDN 互补）
-├── cryptography/   # 密码学
-└── essay/          # 杂谈
+├── cloud-native/   # K8s、controller-runtime（按需创建）
+├── network/        # 计算机网络（按需创建）
+├── algorithm/      # 算法笔记（按需创建）
+├── cryptography/   # 密码学（按需创建）
+└── essay/          # 杂谈（按需创建）
 ```
 
 ## 视觉风格
@@ -59,7 +59,7 @@ src/content/posts/
 
 **配色系统**（已定稿）：
 
-权威设计规范见 `docs/superpowers/specs/2026-06-08-zephyr-lab-design.md`。`docs/design.md` 是历史草稿，如有冲突以后者为准。
+权威设计规范见 `docs/superpowers/specs/2026-06-08-zephyr-lab-design.md`。`docs/design.md` 是历史草稿，已废弃。
 
 ```
 背景：#08090A (Linear 同款 near-black)
@@ -104,7 +104,7 @@ Astro 5
 ## 仓库与命名
 
 - **本地目录**：`~/code/zephyr-lab/`
-- **GitHub 仓库**：`gzb1128/gzb1128.github.io`（待创建，必须用此名才能拿到根路径）
+- **GitHub 仓库**：`gzb1128/gzb1128.github.io`（已创建，使用此名以获得根路径部署）
 - **默认分支**：`main`
 - **部署分支**：GitHub Actions 直接部署到 Pages，不用单独的 `gh-pages` 分支
 
@@ -252,10 +252,9 @@ src/components/
 - [x] 视觉风格方向确认
 - [x] 项目目录创建（`~/code/zephyr-lab/`）
 - [x] AGENTS.md（本文件）
-- [x] docs/design.md（历史草稿，已废弃）
 - [x] docs/superpowers/specs/2026-06-08-zephyr-lab-design.md（已验证设计规范）
-- [ ] Astro 项目初始化
+- [x] Astro 项目初始化
+- [x] GitHub 仓库创建 + Actions 配置
 - [ ] Linear 风格主题定制
-- [ ] GitHub 仓库创建 + Actions 配置
 - [ ] 第一篇文章
 - [ ] CSDN 侧添加新博客链接
