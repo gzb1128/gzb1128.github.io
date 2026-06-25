@@ -209,6 +209,41 @@ time -->
 
 由此得到本文最核心的判断：**逻辑流的建立由框架负责，流上要传的内容由 function 协商，两者是解耦的**。一个更直观的说法是——框架修的是路（逻辑流），流式传输是上面跑的车，车的设计是车主（function）的事。用不用流式、流上格式怎么定，都与框架无关。
 
+## 四层模型套到 gRPC 上
+
+既然"机制共通、外壳不同"，拿这套四层模型去套最主流的生产 RPC——gRPC，能验证这个判断，也顺带澄清一个常见误解：**gRPC 的切帧并不是 protobuf 干的**。
+
+先说约定。gRPC 客户端和服务端的约定由两部分组成：**proto 文件**声明数据结构和 service 方法（方法名、参数类型、返回类型），**HTTP/2** 提供承载它的传输。proto 文件只描述"调什么、传什么结构"，不规定字节怎么切。
+
+再看四层各是谁的职责。gRPC 并非重新发明帧格式，而是复用 HTTP/2 现成的两层：
+
+- **第 1、2 层（帧化 + 多路复用）由 HTTP/2 承担**。HTTP/2 自己定义了 9 字节帧头（含长度、stream id、类型字段），并按 stream id 做多路复用——这正是上文机制一、机制二的内容，gRPC 直接复用。所以 gRPC 的"StreamID"就是 HTTP/2 的 stream id，多路复用由 HTTP/2 完成。
+- **长度前缀层（嵌在 DATA 帧里）由 gRPC 协议本身定义**。HTTP/2 帧的 payload 里，gRPC 又套了一层 Length-Prefixed-Message：1 字节压缩标志 + 4 字节消息长度（大端序）+ 消息体。这层是 gRPC 定义的，对应 minirpc 的 Length 字段那层语义。
+- **第 3、4 层（内容）交给 protobuf**。DATA 帧里那个消息体，才是 protobuf 序列化的产物。protobuf 只负责把结构化对象编码成字节，对切帧、多路复用、流式都不知情。
+
+```
+gRPC on the wire (one HTTP/2 DATA frame):
+
+┌─ HTTP/2 frame header (9 B, by HTTP/2 spec) ────────────────────┐
+│ length | type=DATA | flags | stream id                         │
+│   ^ stream id = multiplex key  (Layer 1 + 2)                   │
+└────────────────────────────────────────────────────────────────┘
+
+┌─ gRPC Length-Prefixed-Message (DATA payload) ──────────────────┐
+│ compressed-flag(1B) | message-length(4B BE)                    │
+│   ^ gRPC's own length prefix                                   │
+│                                                                │
+│   +--------------------------------------+                     │
+│   | protobuf-serialized message bytes    |                     │
+│   +--------------------------------------+                     │
+│   ^ Layer 3 + 4 content (the message body)                     │
+└────────────────────────────────────────────────────────────────┘
+```
+
+对照 minirpc 的单层帧（`Length | StreamID | Type | Payload`，JSON 负载）就能看清分工：gRPC 把"帧化"拆给 HTTP/2 做了一部分（帧头 + stream-id 复用），自己只补了一层 Length-Prefixed-Message 来框住 protobuf 消息；minirpc 则把这几件事打在一条帧里，负载用 JSON。两者的第 4 层"内容"分别由 protobuf 和 JSON 承担，但切帧与多路复用的机制是一模一样的。
+
+这也印证了四层模型第 4 层与框架无关的判断：换掉负载格式（JSON 换 protobuf），换掉帧的外壳（自定帧换 HTTP/2），RPC 依然成立，因为前两层"切帧 + 按 id 分发"的机制没变。所谓应用层协议，本质上都是在 TCP 这条字节流之上，叠加上"切帧、复用、内容约定"这三件事。
+
 ## 亲手跑一遍：minirpc
 
 前面用 minirpc 的协议讲完了三个机制，若想把它们拼成一个可运行的整体跑一遍，这个项目本身就是一个直接可用的样本：零外部依赖，只用 Go 标准库，配三个 demo 把三个机制分别可视化。
