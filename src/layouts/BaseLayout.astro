@@ -55,38 +55,79 @@ const {
       });
     </script>
     <script>
-      if (document.querySelector('pre.mermaid')) {
-        const mermaid = await import('mermaid');
-        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const mermaidBlocks = document.querySelectorAll('pre.mermaid');
+      if (mermaidBlocks.length > 0) {
+        const mermaid = (await import('mermaid')).default;
 
-        mermaid.default.initialize({
-          startOnLoad: false,
-          theme: isLight ? 'default' : 'dark',
-          fontFamily: 'var(--font-mono)',
-          themeVariables: isLight
+        // theme: 'base' gives an empty canvas — no built-in dark/light defaults
+        // override our themeVariables. This matters because mermaid's 'dark'
+        // theme silently overrides primaryColor/primaryBorderColor with its own
+        // greys, which desyncs diagrams from the site's Linear-style palette.
+        // All colors below come from src/styles/global.css design tokens.
+        const palette = (isLight) =>
+          isLight
             ? {
-                darkMode: false,
                 background: '#FFFFFF',
-                primaryColor: '#E5E7EB',
-                primaryTextColor: '#08090A',
-                primaryBorderColor: '#D1D5DB',
-                lineColor: '#5E6AD2',
-                secondaryColor: '#F3F4F6',
+                primaryColor: '#F3F4F6',     // bg hover-ish
+                primaryTextColor: '#08090A',  // fg-primary
+                primaryBorderColor: '#D1D5DB',// border
+                lineColor: '#5E6AD2',         // accent-primary
+                secondaryColor: '#E5E7EB',
                 tertiaryColor: '#F7F8F8',
+                clusterBkg: '#FFFFFF',
+                clusterBorder: '#2A2D33',
+                titleColor: '#08090A',
+                edgeLabelBackground: '#FFFFFF',
               }
             : {
-                darkMode: true,
-                background: '#08090A',
-                primaryColor: '#2A2D33',
-                primaryTextColor: '#F7F8F8',
-                primaryBorderColor: '#3A3D44',
-                lineColor: '#5E6AD2',
-                secondaryColor: '#1C1C1F',
-                tertiaryColor: '#0F1011',
-              },
-        });
+                background: '#08090A',        // bg-primary
+                primaryColor: '#1C1C1F',      // bg-tertiary (code block bg)
+                primaryTextColor: '#F7F8F8',   // fg-primary
+                primaryBorderColor: '#3A3D44', // border-strong
+                lineColor: '#5E6AD2',          // accent-primary
+                secondaryColor: '#16171A',     // bg-hover
+                tertiaryColor: '#0F1011',      // bg-secondary
+                clusterBkg: '#0F1011',         // bg-secondary
+                clusterBorder: '#2A2D33',      // border-default
+                titleColor: '#F7F8F8',
+                edgeLabelBackground: '#0F1011',
+              };
 
-        await mermaid.default.run({ querySelector: 'pre.mermaid' });
+        // Capture each block's source up front (run() consumes it) so we can
+        // re-render from scratch whenever the theme changes.
+        const sources = Array.from(mermaidBlocks).map((pre, i) => ({
+          id: `mermaid-svg-${i}`,
+          pre,
+          src: pre.textContent ?? '',
+        }));
+
+        // Render every block against the current theme into its <pre>. Called
+        // once on load and again on each theme toggle, so a diagram never ends
+        // up stale (e.g. a dark diagram on a light background after a switch).
+        const renderWithTheme = async () => {
+          const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: 'base',
+            fontFamily: 'var(--font-mono)',
+            themeVariables: { darkMode: !isLight, ...palette(isLight) },
+          });
+          for (const { id, pre, src } of sources) {
+            try {
+              const { svg } = await mermaid.render(id, src);
+              pre.innerHTML = svg;
+            } catch {
+              // leave previous render in place if a re-render fails
+            }
+          }
+        };
+
+        await renderWithTheme();
+
+        // ThemeToggle flips data-theme on <html>; re-render in response.
+        new MutationObserver(renderWithTheme).observe(document.documentElement, {
+          attributeFilter: ['data-theme'],
+        });
       }
     </script>
   </body>
