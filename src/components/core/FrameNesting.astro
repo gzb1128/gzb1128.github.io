@@ -1,0 +1,41 @@
+---
+// FrameNesting — a static, CSS-only nested-box diagram.
+//
+// Renders an HTTP/2 DATA frame containing a gRPC Length-Prefixed-Message,
+// which in turn contains a protobuf-serialized message body. Each layer is
+// a labeled box nested inside its parent, so containment reads at a glance.
+//
+// Why a hand-built component instead of mermaid? Mermaid's subgraph layout
+// tiles groups side-by-side and cannot express true nested containment
+// (a box inside a box inside a box). For wire-format layout this component
+// is both more accurate and pixel-controllable, and it reuses the site's
+// design tokens so colors match the Linear-style theme.
+//
+// Zero JS — pure static markup + global.css.
+---
+
+<figure class="frame-nesting">
+  <figcaption>图 1：一个 HTTP/2 DATA 帧的字节构成</figcaption>
+
+  <div class="fn-box fn-box--h2">
+    <span class="fn-label">HTTP/2 frame header（9 B，由 HTTP/2 规范定义）<em class="fn-layer">Layer 1 + 2</em></span>
+    <div class="fn-row">
+      <code>length</code><code>type = DATA</code><code>flags</code><code>stream id</code>
+    </div>
+
+    <div class="fn-box fn-box--grpc">
+      <span class="fn-label">gRPC Length-Prefixed-Message（DATA payload）</span>
+      <div class="fn-row">
+        <code>compressed-flag (1 B)</code><code>message-length (4 B, BE)</code>
+      </div>
+
+      <div class="fn-box fn-box--pb">
+        <span class="fn-label">protobuf-serialized message bytes<em class="fn-layer">Layer 3 + 4 内容</em></span>
+        <div class="fn-note">protobuf 只负责把结构化对象编码成字节；切帧与多路复用与它无关。</div>
+      </div>
+    </div>
+
+    <span class="fn-hint"><code>stream id</code> = 多路复用钥匙</span>
+    <span class="fn-hint fn-hint--grpc">gRPC 自己的长度前缀</span>
+  </div>
+</figure>

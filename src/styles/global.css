@@ -184,3 +184,93 @@ h4 {
 	max-width: 100%;
 	height: auto;
 }
+
+/* FrameNesting — static nested-box diagram (used in the RPC article).
+   Each .fn-box is a labeled container; nesting in the markup expresses
+   containment (HTTP/2 ⊃ gRPC ⊃ protobuf). Colors reuse design tokens so
+   the diagram matches the Linear-style theme in both light and dark. */
+.frame-nesting {
+	margin: var(--space-xl) 0;
+}
+
+.frame-nesting figcaption {
+	font-size: 0.875rem;
+	color: var(--fg-secondary);
+	margin-bottom: var(--space-md);
+	text-align: center;
+}
+
+.fn-box {
+	position: relative;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	background: var(--bg-tertiary);
+	padding: var(--space-lg) var(--space-md) var(--space-md);
+	margin-top: var(--space-md);
+}
+
+.fn-box--h2 {
+	background: var(--bg-secondary);
+}
+
+.fn-box--grpc {
+	border-color: var(--accent-primary);
+	background: var(--bg-tertiary);
+}
+
+.fn-box--pb {
+	border-style: dashed;
+	border-color: var(--border-strong);
+	background: var(--bg-hover);
+}
+
+.fn-label {
+	display: block;
+	font-family: var(--font-mono);
+	font-size: 0.8125rem;
+	color: var(--fg-secondary);
+	margin-bottom: var(--space-sm);
+}
+
+.fn-layer {
+	font-style: normal;
+	color: var(--accent-secondary);
+	margin-left: var(--space-sm);
+}
+
+.fn-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-xs);
+}
+
+.fn-row code {
+	font-family: var(--font-mono);
+	font-size: 0.8125rem;
+	background: var(--bg-primary);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-sm);
+	padding: 0.125rem 0.5rem;
+	color: var(--fg-primary);
+	white-space: nowrap;
+}
+
+.fn-note {
+	font-size: 0.8125rem;
+	color: var(--fg-tertiary);
+	margin-top: var(--space-sm);
+	line-height: 1.6;
+}
+
+.fn-hint {
+	display: block;
+	font-size: 0.75rem;
+	color: var(--fg-tertiary);
+	margin-top: var(--space-sm);
+	font-family: var(--font-mono);
+}
+
+.fn-hint--grpc {
+	color: var(--accent-secondary);
+}
+

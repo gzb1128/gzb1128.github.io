@@ -6,6 +6,9 @@ category: "network"
 tags: ["rpc", "multiplexing", "tcp", "streaming"]
 ---
 
+import FrameNesting from '../../components/core/FrameNesting.astro';
+
+
 ## 起点：TCP 字节流上的三个问题
 
 远程过程调用（RPC）的目标朴素：让一个进程像调用本地函数一样，调用另一个进程的函数。传输层通常复用一条 TCP 连接，但 TCP 提供的是一条没有边界的字节流，直接把函数调用架在上面会立刻撞上三个问题。
@@ -221,20 +224,9 @@ time -->
 - **长度前缀层（嵌在 DATA 帧里）由 gRPC 协议本身定义**。HTTP/2 帧的 payload 里，gRPC 又套了一层 Length-Prefixed-Message：1 字节压缩标志 + 4 字节消息长度（大端序）+ 消息体。这层是 gRPC 定义的，对应 minirpc 的 Length 字段那层语义。
 - **第 3、4 层（内容）交给 protobuf**。DATA 帧里那个消息体，才是 protobuf 序列化的产物。protobuf 只负责把结构化对象编码成字节，对切帧、多路复用、流式都不知情。
 
-```mermaid
-flowchart TB
-    subgraph H2["HTTP/2 frame header (9 B, by HTTP/2 spec) — Layer 1 + 2"]
-        direction TB
-        H2F["length | type=DATA | flags | stream id<br/><i>stream id = multiplex key</i>"]
-    end
-    subgraph GRPC["gRPC Length-Prefixed-Message (DATA payload)"]
-        direction TB
-        GF["compressed-flag (1B) | message-length (4B BE)<br/><i>gRPC's own length prefix</i>"]
-        PB["protobuf-serialized message bytes<br/><i>Layer 3 + 4 content</i>"]
-    end
-    H2 --- GRPC
-    GF -.- PB
-```
+一个 HTTP/2 DATA 帧的字节构成如下图：外层是 HTTP/2 帧头，内层嵌套 gRPC 的 Length-Prefixed-Message，最里层才是 protobuf 序列化的消息体。
+
+<FrameNesting />
 
 对照 minirpc 的单层帧（`Length | StreamID | Type | Payload`，JSON 负载）就能看清分工：gRPC 把"帧化"拆给 HTTP/2 做了一部分（帧头 + stream-id 复用），自己只补了一层 Length-Prefixed-Message 来框住 protobuf 消息；minirpc 则把这几件事打在一条帧里，负载用 JSON。两者的第 4 层"内容"分别由 protobuf 和 JSON 承担，但切帧与多路复用的机制是一模一样的。
 
