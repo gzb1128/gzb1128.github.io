@@ -30,8 +30,15 @@ export default function Search() {
     let cancelled = false;
     (async () => {
       try {
-        // @ts-expect-error pagefind is loaded at runtime
-        const pagefind = await import('/pagefind/pagefind.js');
+        // pagefind/pagefind.js is emitted by `pagefind --site dist` after build
+        // and does not exist during `astro dev`. Vite statically analyzes a
+        // literal `import('/pagefind/pagefind.js')` at module load and throws a
+        // resolve error before any runtime guard can intercept it — so we
+        // build the URL at runtime, which Vite cannot see through and therefore
+        // does not try to resolve. The catch below handles a missing index in
+        // dev (search is simply unavailable there; works after build).
+        const pagefindUrl = '/pagefind/' + 'pagefind.js';
+        const pagefind: any = await import(/* @vite-ignore */ pagefindUrl);
         await pagefind.init();
         const search = await pagefind.search(query);
         const items = await Promise.all(
