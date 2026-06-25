@@ -35,8 +35,8 @@ search-index: build ## Generate the Pagefind search index into ./dist.
 verify: search-index ## Full local pre-flight: build + search index (matches CI).
 	@echo "verify OK: build + pagefind passed locally"
 
-preview: build ## Serve the built site locally for a final look.
-	$(NPM) run preview
+preview: build ## Serve the built site locally and open it in a browser.
+	$(NPM) run preview -- --open
 
 clean: ## Remove build artifacts (dist/, .astro/).
 	rm -rf dist .astro
