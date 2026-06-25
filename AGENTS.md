@@ -135,7 +135,7 @@ Astro 5
 
 ```
 src/components/
-  core/          → 静态 UI 组件，零 JS（Header, Footer, PostItem, TagList...）
+  core/          → 静态 UI 组件，零 JS（Header, Footer, PostItem, TagList, FrameNesting...）
   interactive/   → 需要水合的组件（CopyButton, SearchModal...），使用 client:visible
   animated/      → 预留，v3 使用（GSAP / Framer Motion 动画组件）
 ```
@@ -144,6 +144,7 @@ src/components/
 - core/ 下的组件不引入任何 `<script>` 或 `client:*` 指令
 - interactive/ 下的组件使用 client:visible 水合（最小化 JS 体积）
 - animated/ 目录 v1 创建但保持空，放一个 .gitkeep
+- core/ 也放"图表组件"——当某类图（嵌套盒子、特殊布局）用 ASCII/Mermaid 表达不好时，写成静态组件放这里，样式走 `global.css` 的设计 token。写作原则 11 定义了何时该用组件。
 
 ### Tailwind CSS Token 规则
 
@@ -232,6 +233,22 @@ src/components/
 - RED：「ARP 是数据链路层协议」（IEEE 划分为数据链路层，IETF 划分为网络层）
 - GREEN：说明归属争议，或者明确选择一种标准并标注理由
 
+### 11. 按图的内容选载体（ASCII / Mermaid / 组件），不要混用
+
+不同性质的图适合不同的载体，选错会导致边框错位、嵌套关系表达不出、或样式与站点脱节。判定顺序：**先看图表达的是"字节布局"、"关系/流程"、还是"真·嵌套盒子"**。
+
+| 图的性质 | 载体 | 理由 |
+|---|---|---|
+| 字节布局、帧格式表（字段宽度要对齐） | **ASCII**（纯英文标签，见原则 6） | 这类图要的就是"一眼看到字段宽度"，Mermaid 画不出精确对齐，组件反而过度工程 |
+| 流程、时序、状态机、决策树 | **Mermaid** | 关系类图，手画 ASCII 边框极易切错；Mermaid 自动布局且可维护 |
+| 真·嵌套盒子（A 包含 B 包含 C，如协议帧层层包裹） | **自定义组件**（`core/` 下） | Mermaid 的 subgraph 是平铺的，表达不出"框套框"；组件能精确控制嵌套 + 复用设计 token |
+
+- RED：用 Mermaid 的 subgraph 画"HTTP/2 帧包 gRPC 帧包 protobuf"——渲染出来是三个并排分组，看不出嵌套
+- RED：用 ASCII 手画嵌套框——内框右边界极难对齐，反复切错
+- GREEN：嵌套关系用 `core/FrameNesting.astro` 这类组件（CSS box 套 box，颜色走 `global.css` token）；流程图才用 Mermaid
+
+**Mermaid 配色必须对齐设计系统**：`BaseLayout.astro` 里的 `mermaid.initialize` 已用 `themeVariables` 把节点/连线/cluster 映射到 Linear 调色板（`--color-bg-tertiary` / `--color-border-strong` / `--color-accent-primary`）。新增 Mermaid 图不要覆盖这些变量，保持站点视觉统一。
+
 ### Self-Review 检查清单
 
 提交文章前自查：
@@ -245,6 +262,8 @@ src/components/
 - [ ] 限定语境的结论是否标明了适用范围？
 - [ ] 末尾/附录里的概念正文都铺垫过吗？
 - [ ] 各章节收尾是否避免了重复套路？
+- [ ] 协议分层归属是否标注了依据？
+- [ ] 每张图是否选对了载体（字节布局=ASCII，关系/流程=Mermaid，嵌套盒子=组件）？
 
 ## 当前进度
 
