@@ -223,20 +223,17 @@ time -->
 
 ```mermaid
 flowchart TB
-    subgraph H2["HTTP/2 frame header (9 B, by HTTP/2 spec)"]
+    subgraph H2["HTTP/2 frame header (9 B, by HTTP/2 spec) — Layer 1 + 2"]
         direction TB
-        H2F["length | type=DATA | flags | stream id"]
-        H2N["^ stream id = multiplex key  (Layer 1 + 2)"]
+        H2F["length | type=DATA | flags | stream id<br/><i>stream id = multiplex key</i>"]
     end
     subgraph GRPC["gRPC Length-Prefixed-Message (DATA payload)"]
         direction TB
-        GF["compressed-flag (1B) | message-length (4B BE)"]
-        GN["^ gRPC's own length prefix"]
-        PB["protobuf-serialized message bytes"]
-        PBN["^ Layer 3 + 4 content (the message body)"]
+        GF["compressed-flag (1B) | message-length (4B BE)<br/><i>gRPC's own length prefix</i>"]
+        PB["protobuf-serialized message bytes<br/><i>Layer 3 + 4 content</i>"]
     end
     H2 --- GRPC
-    GN -.- PB
+    GF -.- PB
 ```
 
 对照 minirpc 的单层帧（`Length | StreamID | Type | Payload`，JSON 负载）就能看清分工：gRPC 把"帧化"拆给 HTTP/2 做了一部分（帧头 + stream-id 复用），自己只补了一层 Length-Prefixed-Message 来框住 protobuf 消息；minirpc 则把这几件事打在一条帧里，负载用 JSON。两者的第 4 层"内容"分别由 protobuf 和 JSON 承担，但切帧与多路复用的机制是一模一样的。
