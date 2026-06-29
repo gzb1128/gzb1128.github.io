@@ -73,9 +73,13 @@
 	--accent-primary: #5E6AD2;
 	--accent-secondary: #7B85E8;
 
-	--syntax-keyword: #C586C0;
-	--syntax-string: #CE9178;
-	--syntax-number: #B5CEA8;
-	--syntax-comment: #6A737D;
-	--syntax-fn: #DCDCAA;
+	/* Light mode uses darkened syntax hues so tag colors stay legible on
+	   #FFFFFF. The dark-mode values (e.g. #CE9178) fail WCAG on white
+	   (~2.6:1), so light-mode tags switch to deeper variants modeled on
+	   GitHub's light syntax palette. All new values ≥ 5.0:1 on white. */
+	--syntax-keyword: #AD3DA4;   /* #C586C0 2.78:1 -> 5.28:1 */
+	--syntax-string: #A0561A;    /* #CE9178 2.64:1 -> 5.47:1 */
+	--syntax-number: #1A7F37;    /* #B5CEA8 1.70:1 -> 5.08:1 */
+	--syntax-comment: #57606A;   /* #6A737D 4.82:1 -> 6.39:1 */
+	--syntax-fn: #8250DF;        /* #DCDCAA 1.41:1 -> 5.05:1 */
 }

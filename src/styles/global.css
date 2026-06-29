@@ -106,6 +106,15 @@ pre .line {
 	counter-increment: line;
 }
 
+/* `// [!code highlight]` lines. A left accent bar marks the line and a soft
+   tint lifts it from the surrounding code. Both work in dark and light mode
+   because they reuse theme tokens rather than hardcoded colors. */
+pre .line.highlighted {
+	display: block;
+	background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+	box-shadow: inset 2px 0 0 var(--accent-primary);
+}
+
 pre .line::before {
 	content: counter(line);
 	display: inline-block;

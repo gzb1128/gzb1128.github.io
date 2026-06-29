@@ -245,6 +245,11 @@ TOPICS
 v1 不包含 Light Mode，此问题不影响当前交付。
 实现 Light Mode 时需要为 tag 定义加深色或改用色块方案。
 
+> **Resolved (2026-06-26):** Light Mode 已用独立加深版的 syntax token 解决
+> （见 `src/styles/tokens.css` 的 `[data-theme="light"]` 块）。Dark Mode 仍用
+> 原值不变，Light Mode 切换到 GitHub light palette 对应色（如 string
+> `#CE9178` → `#A0561A`，全部 ≥ 4.5:1）。`getTagColor` 通过 CSS 变量自动跟随主题。
+
 ### 4. Post List
 
 时间轴样式，等宽字体：
