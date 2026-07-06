@@ -1,0 +1,254 @@
+---
+title: "GPU 执行模型：从 kernel 到 CUDA core 的层级流转"
+description: "澄清 kernel、thread、warp、SM 的精确含义，用矩阵乘法拆解 SIMT 执行模型下软件层级与硬件层级的映射关系。"
+pubDate: 2026-07-06T08:00:00Z
+category: "systems"
+tags: ["gpu", "cuda", "simt", "parallel-computing"]
+draft: true
+---
+
+Cornell Virtual Workshop 的 [GPU Characteristics](https://cvw.cac.cornell.edu/gpu-architecture/gpu-characteristics/index) 一节用一张术语对照表（thread / CUDA core / warp / SM / kernel）勾勒了 GPU 的并行模型，但表述在软硬件概念之间来回跳跃，初读容易把"软件的线程捆绑"误认为"硬件的核心矩阵"。本文在该节基础上做两件事：校准每个术语的精确含义（是软件概念还是硬件实体），并把软件层级（kernel / grid / block / thread）与硬件层级（SM / warp / CUDA core）的映射逐层拆开。
+
+文末用一个矩阵乘法 kernel 串起全部概念，并说明 SIMT 模型最关键的硬约束——warp divergence——为什么无法被硬件自动消除。
+
+## 核心概念
+
+后续章节会反复引用以下术语，先做统一定义。注意"性质"一列：**软件概念**是程序员和运行时可见的逻辑单位，**硬件实体**是 GPU 芯片上真实存在的计算结构。
+
+| 术语 | 性质 | 定义 |
+|------|------|------|
+| kernel | 软件 | 用 `__global__` 标记的函数，会被 GPU 并行执行 N 份 |
+| grid | 软件 | 一次 kernel 启动所创建的全部 block 的集合（一次性容器） |
+| block（thread block） | 软件 | grid 的子单元，block 内 thread 可同步、可共享内存 |
+| thread | 软件 | 一份指令流 + 数据的执行实体，kernel 的单次克隆 |
+| SM（Streaming Multiprocessor） | 硬件 | block 的执行单元，内含多组 CUDA core、调度器、私有内存层级 |
+| warp | 软件概念 | block 内连续 32 个 thread 的捆绑，SM 的调度单位 |
+| CUDA core | 硬件 | 真正执行算术指令的单元，类似 CPU 向量单元的一个 lane |
+| SIMT | 模型 | Single Instruction Multiple Threads，warp 内 32 thread 同一时刻执行同一条指令 |
+
+一个常见的混淆是把 warp 当作"32 个 CUDA core 的硬件矩阵"。实际上 **warp 描述的是线程（软件），不是 core（硬件）**。NVIDIA 的编程模型把 warp 定义为连续 32 个线程的捆绑，这是面向程序员的稳定契约（自 CUDA 诞生以来 warp size 一直是 32）。SM 在执行时把一条 warp 指令映射到内部的执行单元上，但执行单元的具体数量与排布随架构演进，并不一定就是"32 个 core 焊死成一组"。**稳定的、可依赖的是 warp=32 这个软件契约；具体的硬件实现是实现细节。**
+
+## kernel：并行执行的函数模板
+
+CUDA 的 kernel 和 Linux 的 kernel 是**完全不同的两个东西**，只是恰好共用一个英文单词。
+
+| | Linux kernel | CUDA kernel |
+|---|---|---|
+| 本质 | 操作系统核心，一整套系统调用、驱动、调度器的集合 | 用户编写的、标记 `__global__` 的**一个**函数 |
+| 作者 | 发行版 / 内核维护者 | 应用开发者本人 |
+| 抽象层级 | 应用与硬件之间的中间层，内部实现对应用透明 | 直接运行在 GPU 上的用户代码，函数体就是源码 |
+
+GPU 硬件中**没有**叫 kernel 的实体。kernel 只存在于源代码里：
+
+```c
+// 这个函数本身就是一个 kernel
+__global__ void vecAdd(float* A, float* B, float* C, int n) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) C[i] = A[i] + B[i];
+}
+
+// 启动：4 个 block，每 block 100 个 thread，共 400 份克隆并行执行
+vecAdd<<<4, 100>>>(A, B, C, 400);
+```
+
+启动配置 `<<<M, N>>>` 的两个参数由**程序员手动指定**：M 是 block 数量，N 是每 block 的 thread 数。kernel 函数体本身不知道、也不关心这两个值——它只定义"单次执行要做什么"，并行多少份是启动时的配置。
+
+## thread 如何取得数据：索引驱动的 offset
+
+这是 CUDA 最反直觉的一点：**所有 thread 拿到的函数参数是同一份指针**。真正让每个 thread 干不同活的，是硬件注入的内置变量 `threadIdx` 和 `blockIdx`。
+
+一个 thread 的完整构成：
+
+```
+指令流：kernel 函数体（所有 thread 共享同一份）
+数据：
+  ① 函数参数（所有 thread 共享同一份指针）
+  ② 内置变量 threadIdx / blockIdx（每个 thread 不同）
+  ③ 私有局部变量与寄存器（每个 thread 独立）
+```
+
+thread 用内置变量算出自己负责的数据切片的 offset，再去显存取数。GPU **不会替程序员换算地址**——它只提供"身份证号"，把身份证号翻译成数组地址是应用逻辑的责任。
+
+### 矩阵乘法的完整 kernel
+
+以 `C = A × B`（A 是 M×K，B 是 K×N，C 是 M×N）为例。每个 thread 负责计算 C 的一个元素：
+
+```c
+__global__ void matmul(const float* A, const float* B, float* C,
+                       int M, int K, int N) {
+    // 第一步：算出"我负责 C 的哪个元素"
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row >= M || col >= N) return;
+
+    // 第二步：算这个元素的点积
+    float sum = 0.0f;
+    for (int k = 0; k < K; k++) {
+        float a = A[row * K + k];    // A[row][k] 的 offset
+        float b = B[k   * N + col];  // B[k][col] 的 offset
+        sum += a * b;
+    }
+
+    // 第三步：写回结果（同样是自算 offset）
+    C[row * N + col] = sum;
+}
+```
+
+### 内置变量是 dim3 结构体
+
+`threadIdx`、`blockIdx`、`blockDim`、`gridDim` 都是 `dim3` 结构体，各带 `.x .y .z` 三个分量。一维问题只用 `.x`，二维用 `.x .y`，三维全用。
+
+二维索引与 C++ 数组下标的对应关系是初学时最容易卡住的点：
+
+```
+              col (x-axis, horizontal →)
+              0   1   2   3
+row  0      ┌───┬───┬───┬───┐
+(i,  1      │   │   │   │   │
+y-axis ↓) 2 │   │   │ ★ │   │   <- C[2][2], i.e. row=2, col=2
+row  3      └───┴───┴───┴───┘
+```
+
+| 视角 | "第几行"用 | "第几列"用 |
+|------|-----------|-----------|
+| C++ 下标 `f[i][j]` | `i` | `j` |
+| CUDA 坐标分量 | `.y` | `.x` |
+| 数学矩阵 `A_{rc}` | `r` (row) | `c` (col) |
+
+记忆方法：坐标系里 x 横、y 纵；矩阵里行纵向变化、列横向变化。所以 **y 对应行（i），x 对应列（j）**。CUDA 的 `row = blockIdx.y * blockDim.y + threadIdx.y` 完全等价于 C++ 双 for 循环里的外层下标 `i`。
+
+### offset 计算：把 2D 索引压扁成 1D
+
+显存是一维的，矩阵按**行主序**存储。`A[row][k]` 在一维数组中的位置是 `row * K + k`，其中 `K` 是一行有几个元素。这个乘法是程序员必须自己写的"业务知识"：
+
+```
+A (M rows x K cols), row-major:
+┌────────────────────────────────────────┐
+│ a00 a01 ... a0(K-1) │ a10 a11 ... │ ...
+│      row 0          │  row 1      │
+└────────────────────────────────────────┘
+linear address of A[row][k] = row * K + k
+```
+
+启动配置用 `dim3` 声明 block 和 grid 的形状：
+
+```c
+dim3 threadsPerBlock(16, 16);              // 每 block 16×16 = 256 thread
+dim3 numBlocks((N + 15) / 16, (M + 15) / 16);  // 向上取整覆盖整个 C
+matmul<<<numBlocks, threadsPerBlock>>>(A, B, C, M, K, N);
+```
+
+`(N + 15) / 16` 是向上取整的标准写法，保证 grid 的 thread 总数不少于矩阵元素数；多出来的 thread 由 kernel 开头的 `if (row >= M || col >= N) return` 提前退出。
+
+## 软件层级到硬件层级的映射
+
+软件上的三层嵌套（grid / block / thread）在启动后被映射到硬件的三层执行结构。完整流转如下：
+
+```
+kernel (function) --launch--> grid (one-shot software container)
+                                  |
+                                  | driver dispatches
+                                  v
+                          +---- SM ----+  +---- SM ----+
+                          |  block 0   |  |  block 2   |   block does not cross SM
+                          |  block 1   |  |  block 3   |   an SM may host >1 block
+                          +------------+  +------------+
+                                  |
+                                  | SM splits into chunks of 32
+                                  v
+                            warp 0,1,2,...          32 consecutive threads = 1 warp
+                                  |
+                                  | SM scheduler time-slices
+                                  v
+                            SM execution units      the actual hardware that runs the warp
+```
+
+三个关键约束决定了这个映射的行为：
+
+1. **block 不能跨 SM**：一个 block 必须整体落在同一个 SM 上执行。如果 block 数多于 SM 数，多个 block 会被塞进同一个 SM。
+2. **warp 是 SM 的调度单位**：SM 把 block 内的线程按 thread index 连续切分成 warp，每个 warp 恰好 32 个线程（最后一个可能不足 32，仍占用一个 warp 的执行资源）。
+3. **warp 成员静态固定**：warp 的成员关系在 block 被切分那一刻就定死，整个 kernel 执行期间不变。这条约束在下一节会解释其深远影响。
+
+### SM 的内部时间片调度
+
+SM 内部并非一次性把所有 warp 跑完，而是用调度器在 warp 之间快速切换。Volta 架构每个 SM 有 4 个 warp 调度器；每个周期，每个调度器挑一个"就绪"的 warp，把它派到 SM 的执行单元上跑当前那条指令——执行单元的具体排布因架构而异，但编程模型保证整条 warp 的 32 个线程会被一起推进。
+
+这种切换的核心价值是**延迟隐藏**：当一个 warp 在等待显存加载（往往几百个周期），SM 立刻切到别的 warp 继续算，不让 core 闲置。这也是为什么 CUDA 编程指南反复强调"block 内要有足够的线程数"——warp 太少，调度器没有可切换的对象，访存延迟会直接暴露成性能塌方。
+
+> SM 不是"指令模块"。它是一个带私有缓存（寄存器、L1、常量缓存、共享内存）和调度器的完整执行单元，在 GPU 中的地位近似于 CPU 中的一个 core。每个 SM 内部的执行单元以架构相关的方式排布，用于推进整条 warp 的 32 个线程。
+
+## SIMT 与 warp divergence
+
+SIMT（Single Instruction Multiple Threads）是理解 GPU 执行模型的钥匙：**warp 内 32 个 thread 在同一时刻只能执行同一条指令**。
+
+这条约束源自 SIMT 编程模型——一条 warp 指令作用于整条 warp 的 32 个线程，由 SM 的执行单元一起推进；分歧时硬件通过 active mask 串行处理各分支路径（详见下一节）。它直接决定了 if 语句在 GPU 上的代价。
+
+### if 在 warp 内被串行化
+
+假设 warp 内 32 个 thread 遇到 `if (x > 0)`，其中前 16 个为 true、后 16 个为 false。GPU 的执行时间线不是两路并行，而是串行走完两段：
+
+```
+cycles 1-5:  warp executes the "then" branch
+               thread 0..15   ACTIVE
+               thread 16..31  masked (idle)
+
+cycles 6-10: warp executes the "else" branch
+               thread 0..15   masked (idle)
+               thread 16..31  ACTIVE
+
+cycles 11+:  warp re-syncs at the merge point, continues
+```
+
+两边各 5 个周期的工作，实际花了 10 个周期完成。性能直接减半。这就是 **warp divergence**（分支分歧）。原本 32 路并行的 warp，在分歧期间退化为部分 thread 闲置的串行执行。
+
+矩阵乘法这类算法在 GPU 上能跑出高加速，正是因为其循环逻辑在 warp 内高度一致、几乎不触发 divergence。傅里叶变换、卷积、点积累加等同理——它们的共同特征是"对每个数据单元做相同的操作"。
+
+## warp divergence 无法被硬件自动消除
+
+一个自然的设想是：既然 warp A 里有一半 thread 走 if、warp B 也有一半走 if，把两个 warp 里走 if 的 thread 拼成一个新的满 warp，不就消除了闲置吗？
+
+这个设想逻辑上成立，但**架构上做不到**。原因有四：
+
+1. **threadIdx 语义会崩**。`threadIdx` 是程序员依赖的身份证号，用于自算 offset。如果 thread 在 warp 间移动，索引体系失效。
+2. **warp 成员在切分时静态固定**。block 被分到 SM 后，thread 按连续 index 永久编入固定 warp，整个 kernel 期间不变。
+3. **共享内存访问依赖固定编排**。warp shuffle、广播读等优化假设了 thread 之间的位置关系是确定的。
+4. **warp 是硬件的调度与执行原子**。一条 warp 指令在 SM 的执行单元上被一起推进，硬件没有提供"跨 warp 拆分/合并线程"的机制；即使底层执行单元的具体排布因架构而异，SIMT 模型也不允许 warp 之间重组线程。
+
+CPU 的分支预测在 SIMT 模型下也不适用——分支预测的前提是"单条执行流"，而 warp 是 32 条执行流的捆绑，没有单一的可预测路径。
+
+### 硬件能做的有限缓解
+
+硬件和编译器提供几种有限的优化，但都只能缓解、无法根治 divergence：
+
+- **Predication（谓词执行）**：对短分支，编译器把 if-else 改写成"两边都算、用掩码挑选结果"，避免跳转。代价是浪费一半计算，但消除了流水线气泡。仅适合 1-2 条指令的小 if。
+- **Active mask**：warp 内每个 thread 有激活位，不活跃 thread 不写回结果，但也不干活——这就是 divergence 的浪费来源。
+- **Volta 起的 Independent Thread Scheduling**：让 warp 内 thread 拥有独立程序计数器，分支同步更细粒度，但 divergence 的根本浪费仍在。
+
+### 真正的解法在程序员
+
+既然硬件不会救场，CUDA 程序员在 kernel 设计时就要主动消除 divergence。常见打法：
+
+| 方法 | 做法 |
+|------|------|
+| 数据排序 | 在 kernel 启动前重排数据，让相邻 thread（同 warp）走同一分支 |
+| 拆分 kernel | 把 if-else 两路拆成两个无分支 kernel，分别处理两类数据 |
+| Warp specialization | 让整个 warp 走一条路（如生产者 warp 与消费者 warp），if 在 warp 边界切分，warp 内无分歧 |
+
+第三种方法揭示了一条通用原则：**把分支的切分点对齐到 warp 边界（32 的整数倍），让任何时刻整个 warp 都走同一边**，divergence 就自然消失。
+
+## CPU 与 GPU：两种执行哲学
+
+GPU 能执行几乎所有的 C++ 控制流——if、for、while、函数调用都支持。但"能写"和"高效执行"是两回事。差异的根源在于两者优化的目标不同：
+
+| 维度 | CPU | GPU |
+|------|-----|-----|
+| 优化目标 | 单条执行流的低延迟 | 大量执行流的高吞吐量 |
+| 核心数 | 少（4–64） | 多（数千 CUDA core） |
+| 每核复杂度 | 高（分支预测、乱序、深流水线） | 低（精简控制逻辑） |
+| 控制流代价 | if 高效，各线程独立走各路 | if 触发 divergence，warp 内串行化 |
+| 甜区 | 复杂逻辑 × 任意数据规模 | 简单逻辑 × 海量数据 |
+
+CPU 用复杂的硬件（分支预测、乱序执行、大缓存）迁就程序员的任意代码，让"任何代码都能跑得不错"，代价是每个核心耗资巨大、数量有限。GPU 砍掉这些复杂度，把省下的晶体管全堆成 CUDA core，换取海量并行——代价是**程序员必须自己保证代码适应 SIMT 模型**：避免 divergence、管理数据布局、对齐访存模式。
+
+这就是为什么 CUDA 性能优化文档大量篇幅在讲数据重排、tiling、warp shuffle 看似琐碎的细节。它们本质上都是在让代码迁就硬件的简单模型，而不是反过来。理解了 warp 这个 32 thread 同步执行的硬约束，就理解了 GPU 编程心智模型的核心。

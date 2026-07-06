@@ -17,10 +17,12 @@ const mono400 = readFileSync(
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
+  return posts
+    .filter((post) => !post.data.draft)
+    .map((post) => ({
+      params: { slug: post.id },
+      props: { post },
+    }));
 }
 
 export async function GET({ props }: { props: { post: CollectionEntry<'posts'> } }) {
