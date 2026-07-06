@@ -4,7 +4,7 @@ description: "澄清 kernel、thread、warp、SM 的精确含义，用矩阵乘�
 pubDate: 2026-07-06T08:00:00Z
 category: "systems"
 tags: ["gpu", "cuda", "simt", "parallel-computing"]
-draft: true
+draft: false
 ---
 
 Cornell Virtual Workshop 的 [GPU Characteristics](https://cvw.cac.cornell.edu/gpu-architecture/gpu-characteristics/index) 一节用一张术语对照表（thread / CUDA core / warp / SM / kernel）勾勒了 GPU 的并行模型，但表述在软硬件概念之间来回跳跃，初读容易把"软件的线程捆绑"误认为"硬件的核心矩阵"。本文在该节基础上做两件事：校准每个术语的精确含义（是软件概念还是硬件实体），并把软件层级（kernel / grid / block / thread）与硬件层级（SM / warp / CUDA core）的映射逐层拆开。
