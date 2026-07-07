@@ -37,6 +37,7 @@ src/content/posts/
 ├── ai-agent/       # AI Agent 工具与生态
 ├── cloud-native/   # K8s、controller-runtime（按需创建）
 ├── network/        # 计算机网络（按需创建）
+├── systems/        # 底层系统：GPU/CUDA、SIMT、并行编程、硬件架构
 ├── algorithm/      # 算法笔记（按需创建）
 ├── cryptography/   # 密码学（按需创建）
 └── essay/          # 杂谈（按需创建）

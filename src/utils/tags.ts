@@ -1,4 +1,4 @@
-export type Category = 'ai-agent' | 'cloud-native' | 'algorithm' | 'cryptography' | 'essay';
+export type Category = 'ai-agent' | 'cloud-native' | 'algorithm' | 'cryptography' | 'essay' | 'network' | 'systems';
 
 const TAG_COLORS: Record<Category, string> = {
   'ai-agent': 'var(--syntax-string)',
@@ -6,6 +6,8 @@ const TAG_COLORS: Record<Category, string> = {
   'algorithm': 'var(--syntax-number)',
   'cryptography': 'var(--syntax-fn)',
   'essay': 'var(--syntax-comment)',
+  'network': 'var(--syntax-fn)',
+  'systems': 'var(--syntax-number)',
 };
 
 export function getTagColor(tag: Category): string {
@@ -15,6 +17,8 @@ export function getTagColor(tag: Category): string {
 export const ALL_CATEGORIES: Category[] = [
   'ai-agent',
   'cloud-native',
+  'network',
+  'systems',
   'algorithm',
   'cryptography',
   'essay',
