@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import Giscus from '@giscus/react';
 
-export default function Comments() {
+interface Props {
+  legacyPath?: string;
+}
+
+export default function Comments({ legacyPath }: Props) {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof document === 'undefined') return 'dark';
     const v = document.documentElement.getAttribute('data-theme');
@@ -37,7 +41,8 @@ export default function Comments() {
         repoId="R_kgDOS0Lakg"
         category="Announcements"
         categoryId="DIC_kwDOS0Laks4C-0qf"
-        mapping="pathname"
+        mapping={legacyPath ? 'specific' : 'pathname'}
+        term={legacyPath}
         strict="0"
         reactionsEnabled="1"
         emitMetadata="0"

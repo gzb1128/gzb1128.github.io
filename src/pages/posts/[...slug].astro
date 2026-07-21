@@ -38,6 +38,7 @@ const readingTime = Math.max(1, Math.ceil(wordCount / 300));
   description={post.data.description}
   updatedDate={post.data.updatedDate}
   slug={post.id}
+  legacyPath={post.data.legacyPath}
   wordCount={wordCount}
   readingTime={readingTime}
   prevPost={prev ? { title: prev.data.title, slug: prev.id } : undefined}

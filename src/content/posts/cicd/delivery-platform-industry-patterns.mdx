@@ -2,7 +2,8 @@
 title: "交付平台的参考模型：计划、队列、并发域与执行归约"
 description: "以 Harness 与 Terraform 为样本，归纳长时间交付系统中声明与执行分离、持久队列、依赖图和并发控制的设计动因。"
 pubDate: 2026-07-17T08:00:00Z
-category: "cloud-native"
+category: "cicd"
+legacyPath: "/posts/cloud-native/delivery-platform-industry-patterns/"
 tags: ["delivery-platform", "ci/cd", "iac", "workflow", "platform-engineering"]
 draft: false
 ---
@@ -15,7 +16,7 @@ draft: false
 - Controller、Runner 或网络失败后，系统从哪里继续？
 - 用户看到的状态是否足以解释排队、执行和失败？
 
-前两篇分别分析了 [Harness 的流水线并发模型](/posts/cloud-native/harness-pipeline-concurrency/)和 [Terraform 的 State 与资源图模型](/posts/cloud-native/terraform-state-graph-concurrency/)。二者产品边界不同，却共享一组稳定的工程选择。本文以这两个样本为线索，归纳一套适用于长时间交付系统的参考模型。下文是基于案例的设计推导，不将两个产品的做法直接等同于完整的行业标准。
+前两篇分别分析了 [Harness 的流水线并发模型](/posts/cicd/harness-pipeline-concurrency/)和 [Terraform 的 State 与资源图模型](/posts/cicd/terraform-state-graph-concurrency/)。二者产品边界不同，却共享一组稳定的工程选择。本文以这两个样本为线索，归纳一套适用于长时间交付系统的参考模型。下文是基于案例的设计推导，不将两个产品的做法直接等同于完整的行业标准。
 
 ## 两类平台，两种核心问题
 

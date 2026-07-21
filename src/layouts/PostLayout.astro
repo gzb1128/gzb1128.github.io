@@ -10,13 +10,14 @@ interface Props {
   description?: string;
   updatedDate?: Date;
   slug?: string;
+  legacyPath?: string;
   wordCount?: number;
   readingTime?: number;
   prevPost?: { title: string; slug: string };
   nextPost?: { title: string; slug: string };
 }
 
-const { title, pubDate, category, description, updatedDate, slug, wordCount, readingTime, prevPost, nextPost } = Astro.props;
+const { title, pubDate, category, description, updatedDate, slug, legacyPath, wordCount, readingTime, prevPost, nextPost } = Astro.props;
 
 const ogImage = slug ? `${Astro.site}posts/${slug}/og.png` : '';
 
@@ -78,7 +79,7 @@ const updatedStr = updatedDate ? updatedDate.toISOString().split('T')[0] : null;
         </div>
       </nav>
     )}
-    <Comments client:visible />
+    <Comments legacyPath={legacyPath} client:visible />
   </article>
 </BaseLayout>
 

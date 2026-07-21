@@ -2,7 +2,8 @@
 title: "GitHub Actions：从提交并行到部署并发域"
 description: "解析 Workflow Run、Job DAG、Environment 与 Concurrency Group 如何协作，并讨论 GitHub Actions 的 Plan/Execute 边界及其对交付平台的启示。"
 pubDate: 2026-07-20T08:00:00Z
-category: "cloud-native"
+category: "cicd"
+legacyPath: "/posts/cloud-native/github-actions-deployment-concurrency/"
 tags: ["github-actions", "ci/cd", "deployment", "concurrency", "workflow"]
 draft: false
 ---
@@ -217,7 +218,7 @@ Environment 解决“谁可以放行”，Artifact 和摘要解决“放行的�
 
 ## 与 Harness、Terraform 的位置关系
 
-前文已经分别分析了 [Harness 的 Pipeline 并发](/posts/cloud-native/harness-pipeline-concurrency/)和 [Terraform 的 State 与 Dependency Graph](/posts/cloud-native/terraform-state-graph-concurrency/)。三者可以放在同一坐标系中理解：
+前文已经分别分析了 [Harness 的 Pipeline 并发](/posts/cicd/harness-pipeline-concurrency/)和 [Terraform 的 State 与 Dependency Graph](/posts/cicd/terraform-state-graph-concurrency/)。三者可以放在同一坐标系中理解：
 
 | 系统 | 主要抽象 | 执行间冲突边界 | 执行内并行 | Plan 语义 |
 |---|---|---|---|---|
@@ -227,7 +228,7 @@ Environment 解决“谁可以放行”，Artifact 和摘要解决“放行的�
 
 GitHub Actions 展示了最轻量的一端：平台不理解目标语义，却用 Commit identity、Job DAG、Environment 和 Concurrency Group建立了可组合的控制面。Terraform 位于语义更强的一端：它理解资源、状态和变更计划。Harness 则强调持久 Execution、Stage 调度与 Runner。
 
-这也补充了 [交付平台参考模型](/posts/cloud-native/delivery-platform-industry-patterns/)中的结论：通用机制可以负责触发、队列和执行，真正影响交付正确性的冲突域、不可变输入与目标归约，最终仍要由最理解资源的一层承担。
+这也补充了 [交付平台参考模型](/posts/cicd/delivery-platform-industry-patterns/)中的结论：通用机制可以负责触发、队列和执行，真正影响交付正确性的冲突域、不可变输入与目标归约，最终仍要由最理解资源的一层承担。
 
 ## 参考资料
 
