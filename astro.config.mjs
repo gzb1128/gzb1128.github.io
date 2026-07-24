@@ -12,6 +12,12 @@ import { transformerNotationHighlight } from '@shikijs/transformers';
 
 export default defineConfig({
 	site: 'https://gzb1128.github.io',
+	redirects: {
+		'/posts/cloud-native/delivery-platform-industry-patterns': '/posts/cicd/delivery-platform-industry-patterns/',
+		'/posts/cloud-native/github-actions-deployment-concurrency': '/posts/cicd/github-actions-deployment-concurrency/',
+		'/posts/cloud-native/harness-pipeline-concurrency': '/posts/cicd/harness-pipeline-concurrency/',
+		'/posts/cloud-native/terraform-state-graph-concurrency': '/posts/cicd/terraform-state-graph-concurrency/',
+	},
 	integrations: [mdx(), sitemap(), react()],
 	markdown: {
 		shikiConfig: {

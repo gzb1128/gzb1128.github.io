@@ -27,6 +27,7 @@ CSDN 旧内容**保留不迁移**，新内容发布到 Zephyr's Lab。两侧做�
 
 **新博客内容方向**：
 - AI Agent 工具开发（OpenCode、Claude Code 生态）
+- CI/CD（流水线、交付平台、IaC 与部署并发）
 - Cloud Native（K8s、controller-runtime、KubeVela）
 - 杂谈（technical essays、reading notes）
 - 偶尔回顾算法/密码学话题
@@ -35,6 +36,7 @@ CSDN 旧内容**保留不迁移**，新内容发布到 Zephyr's Lab。两侧做�
 ```
 src/content/posts/
 ├── ai-agent/       # AI Agent 工具与生态
+├── cicd/           # CI/CD、交付平台、IaC、流水线
 ├── cloud-native/   # K8s、controller-runtime（按需创建）
 ├── network/        # 计算机网络（按需创建）
 ├── systems/        # 底层系统：GPU/CUDA、SIMT、并行编程、硬件架构

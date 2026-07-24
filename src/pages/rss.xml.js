@@ -10,11 +10,20 @@ export async function GET(context) {
     items: posts
       .filter((p) => !p.data.draft)
       .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-      .map((post) => ({
-        title: post.data.title,
-        pubDate: post.data.pubDate,
-        description: post.data.description || '',
-        link: `/posts/${post.id}/`,
-      })),
+      .map((post) => {
+        const legacyGuid = post.data.legacyPath
+          ? new URL(post.data.legacyPath, context.site).href
+          : undefined;
+
+        return {
+          title: post.data.title,
+          pubDate: post.data.pubDate,
+          description: post.data.description || '',
+          link: `/posts/${post.id}/`,
+          customData: legacyGuid
+            ? `<guid isPermaLink="true">${legacyGuid}</guid>`
+            : undefined,
+        };
+      }),
   });
 }
